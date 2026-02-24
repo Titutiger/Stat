@@ -1,14 +1,11 @@
 # core.py
-from numpy import ndarray
-
-from utils import _conv, _cond
 
 import numpy as np
 import math
 import pandas as pd
 from typing import Any
 
-
+# ...
 
 # trying classes
 class Stat:
@@ -43,28 +40,16 @@ class Stat:
         if len(self.data) == 0:
             raise ValueError("Data cannot be empty.")
 
+
     # =========================
     # Descriptive Statistics
     # =========================
 
-    def mean(self, method: str = "arithmetic", log: bool = False) -> float | str:
+    def mean(self, method: str = "arithmetic") -> float | str:
         method = method.lower()
         n = len(self.data)
 
         if method in ("a", "ari", "arithmetic"):
-            if log:
-                return f"""
-                Finding arithmetic mean:
-                
-                Firstly, let's get the sum of all of the elements of the data:
-                sum = {np.sum(self.data)}
-                Now, to get the mean of that data, we have to divied it by the total
-                count of all of the elements of the data.
-                count = {len(self.data)}
-                Mean = sum / count
-                M = {np.sum(self.data)} / {len(self.data)}
-                M = {float(np.sum(self.data) / len(self.data))} 
-                """
             return float(np.sum(self.data) / n)
 
 
@@ -72,21 +57,11 @@ class Stat:
             if np.any(self.data <= 0):
                 raise ValueError("Geometric mean requires all values > 0.")
 
-            if log:
-                return f"""
-                 ... ===================================================================================================
-                """
-
             return float(np.prod(self.data) ** (1 / n))
 
         elif method in ("h", "har", "harmonic"):
             if np.any(self.data == 0):
                 raise ValueError("Harmonic mean undefined for zero values.")
-
-            if log:
-                return f"""
-                 ... ===================================================================================================
-                """
 
             return float(n / np.sum(1 / self.data))
 
