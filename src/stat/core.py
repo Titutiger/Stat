@@ -18,7 +18,7 @@ class Stat:
     # =========================
 
     @staticmethod
-    def _transform(obj: Any, to: str) -> np.ndarray | pd.DataFrame:
+    def _transform(obj: Any, to: str = 'n.ndarray') -> np.ndarray | pd.DataFrame:
         """
         Transforms selected datatypes to np.ndarray.
         - Takes an object `obj` and converts to `to`.
@@ -120,14 +120,14 @@ class Stat:
     def std(self, sample: bool = False) -> float:
         return float(math.sqrt(self.variance(sample=sample)))
 
-    def minimum(self) -> float:
+    def min(self) -> float:
         return float(np.min(self.data))
 
-    def maximum(self) -> float:
+    def max(self) -> float:
         return float(np.max(self.data))
 
     def range(self) -> float:
-        return self.maximum() - self.minimum()
+        return self.max() - self.min()
 
     def summary(self) -> dict:
         return {
@@ -135,7 +135,7 @@ class Stat:
             "median": self.median(),
             "variance": self.variance(),
             "std": self.std(),
-            "min": self.minimum(),
-            "max": self.maximum(),
+            "min": self.min(),
+            "max": self.max(),
             "range": self.range(),
         }
