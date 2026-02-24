@@ -5,66 +5,15 @@ from utils import _conv, _cond
 
 import numpy as np
 import math
+import pandas as pd
 from typing import Any
 
-'''
-def mean(arr: np.ndarray, type_: str) -> float | None:
-    if not isinstance(arr, np.ndarray):
-        arr = _conv(arr)
-
-    _cond(arr)
-
-    n = len(arr)
-    type_ = type_.lower()
-
-    if type_ in ['a', 'ari', 'arithmetic']:
-        return float(sum(arr) / n)
-
-    elif type_ in ['g', 'geo', 'geometric']:
-        if (arr<0).sum() > 0:
-            raise ValueError('Negative values will break geometric mean.')
-
-        return float(np.power(math.prod(arr), 1/n))
-
-    elif type_ in ['h', 'har', 'harmonic']:
-        return float(n / np.sum(1/arr))
-
-
-    else:
-        raise ValueError('Enter a valid type of mean.')
-
-    return None
-
-def median(arr: np.ndarray, type_: str) -> float | None:
-    if not isinstance(arr, np.ndarray):
-        arr = _conv(arr)
-
-    _cond(arr)
-
-    n = len(arr)
-    type_ = type_.lower()
-
-    if n % 2 != 0:
-        return float(
-            (n+1)/2
-        )
-    elif n % 2 == 0:
-        return float(
-            (n/2 + (n/2) + 1) / 2
-        )
-
-
-if __name__ == '__main__':
-    arr = np.array([1, 2, 3, 4, 5])
-    mean(arr, '')
-
-'''
 
 
 # trying classes
 class Stat:
     def __init__(self, data: Any):
-        self.data = self._convert(data)
+        self.data = self._transform(data)
         self._validate()
 
     # =========================
@@ -72,11 +21,21 @@ class Stat:
     # =========================
 
     @staticmethod
-    def _convert(obj: Any) -> np.ndarray:
-        try:
-            return np.asarray(obj, dtype=float)
-        except Exception:
-            raise ValueError("Data cannot be converted to numeric array.")
+    def _transform(obj: Any, to: str) -> np.ndarray | pd.DataFrame:
+        """
+        Transforms selected datatypes to np.ndarray.
+        - Takes an object `obj` and converts to `to`.
+
+        Currently, can convert:
+        list | tuple | set | pd.DataFrame -> np.ndarray
+        """
+        def log_str(reason: str | Exception) -> str:
+            return f"Could not convert {obj} to {to} because:\n{reason}"
+
+        try: arr = np.asarray(obj)
+        except Exception as e: raise ValueError(log_str(e))
+
+        return arr
 
     def _validate(self) -> None:
         if self.data.ndim != 1:
@@ -88,21 +47,47 @@ class Stat:
     # Descriptive Statistics
     # =========================
 
-    def mean(self, method: str = "arithmetic") -> float:
+    def mean(self, method: str = "arithmetic", log: bool = False) -> float | str:
         method = method.lower()
         n = len(self.data)
 
         if method in ("a", "ari", "arithmetic"):
+            if log:
+                return f"""
+                Finding arithmetic mean:
+                
+                Firstly, let's get the sum of all of the elements of the data:
+                sum = {np.sum(self.data)}
+                Now, to get the mean of that data, we have to divied it by the total
+                count of all of the elements of the data.
+                count = {len(self.data)}
+                Mean = sum / count
+                M = {np.sum(self.data)} / {len(self.data)}
+                M = {float(np.sum(self.data) / len(self.data))} 
+                """
             return float(np.sum(self.data) / n)
+
 
         elif method in ("g", "geo", "geometric"):
             if np.any(self.data <= 0):
                 raise ValueError("Geometric mean requires all values > 0.")
+
+            if log:
+                return f"""
+                 ... ===================================================================================================
+                """
+
             return float(np.prod(self.data) ** (1 / n))
 
         elif method in ("h", "har", "harmonic"):
             if np.any(self.data == 0):
                 raise ValueError("Harmonic mean undefined for zero values.")
+
+            if log:
+                return f"""
+                 ... ===================================================================================================
+                """
+
             return float(n / np.sum(1 / self.data))
 
         else:
@@ -138,13 +123,27 @@ class Stat:
                 }
             return value
 
+    def mode(self) -> float:
+        values, counts = np.unique(self.data, return_counts=True)
+        max_count = np.max(counts)
+        modes = values[counts == max_count]
+        return float(modes if len(modes) > 1 else float(modes[0]))
+
     def variance(self, sample: bool = False) -> float:
-        ddof = 1 if sample else 0
-        return float(np.var(self.data, ddof=ddof))
+        n = len(self.data)
+
+        if sample and n < 2:
+            raise ValueError("Sample variance requires at least 2 data points.")
+
+        mean_value = self.mean()
+        squared_diffs = (self.data - mean_value) ** 2
+
+        denominator = n - 1 if sample else n
+
+        return float(np.sum(squared_diffs) / denominator)
 
     def std(self, sample: bool = False) -> float:
-        ddof = 1 if sample else 0
-        return float(np.std(self.data, ddof=ddof))
+        return float(math.sqrt(self.variance(sample=sample)))
 
     def minimum(self) -> float:
         return float(np.min(self.data))
