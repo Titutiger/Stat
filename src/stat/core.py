@@ -3,13 +3,13 @@
 import numpy as np
 import math
 import pandas as pd
-from typing import Any
+from typing import Any, Union
 
-# ...
+# ---
 
-# trying classes
 class Stat:
     def __init__(self, data: Any):
+        self.is_df = isinstance(data, pd.DataFrame) # checks for pd.DataFrame dtype
         self.data = self._transform(data)
         self._validate()
 
@@ -18,7 +18,7 @@ class Stat:
     # =========================
 
     @staticmethod
-    def _transform(obj: Any, to: str = 'n.ndarray') -> np.ndarray | pd.DataFrame:
+    def _transform(obj: Any, to: str = 'np.ndarray') -> np.ndarray | pd.DataFrame:
         """
         Transforms selected datatypes to np.ndarray.
         - Takes an object `obj` and converts to `to`.
@@ -26,111 +26,106 @@ class Stat:
         Currently, can convert:
         list | tuple | set | pd.DataFrame -> np.ndarray
         """
-        def log_str(reason: str | Exception) -> str:
-            return f"Could not convert {obj} to {to} because:\n{reason}"
 
-        try: arr = np.asarray(obj)
-        except Exception as e: raise ValueError(log_str(e))
+        if isinstance(obj, pd.DataFrame):
+            numeric_df = obj.select_dtypes(include=[np.number])
+            return numeric_df
 
-        return arr
+        try: arr = np.asarray(obj, dtype=float)
+        except Exception as e: raise ValueError(f'Could not convert input because:\n{e}')
+
 
     def _validate(self) -> None:
-        if self.data.ndim != 1:
+        if self.data.ndim and self.is_df != 1:
             raise ValueError("Data must be 1-dimensional.")
-        if len(self.data) == 0:
+        if len(self.data) == 0 or (self.is_df and self.data.empty):
             raise ValueError("Data cannot be empty.")
-
 
     # =========================
     # Descriptive Statistics
     # =========================
 
-    def mean(self, method: str = "arithmetic") -> float | str:
-        method = method.lower()
-        n = len(self.data)
+    # Helper to apply 1D logic to either a 1D array or across DataFrame columns
+    def _apply(self, func, *args, **kwargs):
+        if self.is_df:
+            return self.data.apply(lambda col: func(col.values, *args, **kwargs))
+        return func(self.data, *args, **kwargs)
 
-        if method in ("a", "ari", "arithmetic"):
-            return float(np.sum(self.data) / n)
+    def mean(self, method: str = "arithmetic") -> Union[float, pd.Series]:
+        def _mean(arr):
+            method_clean = method.lower()
+            n = len(arr)
 
+            if method_clean in ("a", "ari", "arithmetic"):
+                return float(np.sum(arr) / n)
 
-        elif method in ("g", "geo", "geometric"):
-            if np.any(self.data <= 0):
-                raise ValueError("Geometric mean requires all values > 0.")
+            elif method_clean in ("g", "geo", "geometric"):
+                if np.any(arr <= 0):
+                    raise ValueError("Geometric mean requires all values > 0.")
+                # Using the log-mean trick to prevent overflow
+                return float(np.exp(np.mean(np.log(arr))))
 
-            return float(np.prod(self.data) ** (1 / n))
+            elif method_clean in ("h", "har", "harmonic"):
+                if np.any(arr == 0):
+                    raise ValueError("Harmonic mean undefined for zero values.")
+                return float(n / np.sum(1 / arr))
 
-        elif method in ("h", "har", "harmonic"):
-            if np.any(self.data == 0):
-                raise ValueError("Harmonic mean undefined for zero values.")
+            else:
+                raise ValueError("Invalid mean method.")
 
-            return float(n / np.sum(1 / self.data))
+        return self._apply(_mean)
 
-        else:
-            raise ValueError("Invalid mean method.")
-
-    def median(self, return_index: bool = False):
-        sorted_indices = np.argsort(self.data)
-        sorted_data = self.data[sorted_indices]
-        n = len(sorted_data)
-
-        if n % 2 == 1:
+    def median(self) -> Union[float, pd.Series]:
+        def _median(arr):
+            sorted_data = np.sort(arr)
+            n = len(sorted_data)
             mid = n // 2
-            value = float(sorted_data[mid])
 
-            if return_index:
-                original_index = int(sorted_indices[mid])
-                return {
-                    "index": original_index,
-                    "value": value
-                }
-            return value
+            if n % 2 == 1:
+                return float(sorted_data[mid])
+            else:
+                return float((sorted_data[mid - 1] + sorted_data[mid]) / 2)
 
-        else:
-            mid1 = n // 2 - 1
-            mid2 = n // 2
+        return self._apply(_median)
 
-            value = float((sorted_data[mid1] + sorted_data[mid2]) / 2)
+    def mode(self) -> Union[float, pd.Series]:
+        def _mode(arr):
+            values, counts = np.unique(arr, return_counts=True)
+            max_count = np.max(counts)
+            modes = values[counts == max_count]
+            return float(modes[0])  # Returns first mode if multimodal
 
-            if return_index:
-                return {
-                    "index": (int(sorted_indices[mid1]), int(sorted_indices[mid2])),
-                    "value": value
-                }
-            return value
+        return self._apply(_mode)
 
-    def mode(self) -> float:
-        values, counts = np.unique(self.data, return_counts=True)
-        max_count = np.max(counts)
-        modes = values[counts == max_count]
-        return float(modes if len(modes) > 1 else float(modes[0]))
+    def variance(self, sample: bool = False) -> Union[float, pd.Series]:
+        def _variance(arr):
+            n = len(arr)
+            if sample and n < 2:
+                raise ValueError("Sample variance requires at least 2 data points.")
 
-    def variance(self, sample: bool = False) -> float:
-        n = len(self.data)
+            mean_value = np.mean(arr)
+            squared_diffs = (arr - mean_value) ** 2
+            denominator = n - 1 if sample else n
+            return float(np.sum(squared_diffs) / denominator)
 
-        if sample and n < 2:
-            raise ValueError("Sample variance requires at least 2 data points.")
+        return self._apply(_variance)
 
-        mean_value = self.mean()
-        squared_diffs = (self.data - mean_value) ** 2
+    def std(self, sample: bool = False) -> Union[float, pd.Series]:
+        # Variance already handles the 1D/2D routing, so we can just square root the result
+        var = self.variance(sample=sample)
+        return var.apply(math.sqrt) if self.is_df else float(math.sqrt(var))
 
-        denominator = n - 1 if sample else n
+    def min(self) -> Union[float, pd.Series]:
+        return self._apply(np.min)
 
-        return float(np.sum(squared_diffs) / denominator)
+    def max(self) -> Union[float, pd.Series]:
+        return self._apply(np.max)
 
-    def std(self, sample: bool = False) -> float:
-        return float(math.sqrt(self.variance(sample=sample)))
-
-    def min(self) -> float:
-        return float(np.min(self.data))
-
-    def max(self) -> float:
-        return float(np.max(self.data))
-
-    def range(self) -> float:
+    def range(self) -> Union[float, pd.Series]:
         return self.max() - self.min()
 
-    def summary(self) -> dict:
-        return {
+    def summary(self) -> Union[dict, pd.DataFrame]:
+        stats = {
             "mean": self.mean(),
             "median": self.median(),
             "variance": self.variance(),
@@ -139,3 +134,8 @@ class Stat:
             "max": self.max(),
             "range": self.range(),
         }
+
+        if self.is_df:
+            # Convert dictionary of Series into a neatly formatted DataFrame
+            return pd.DataFrame(stats)
+        return stats
