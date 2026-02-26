@@ -119,6 +119,17 @@ print(df.summary())
 >>> Salary  58800.0  58000.0  47360000.0  6881.860214  50000  70000  20000
 ```
 
+___
 
+Future Updates:
+- [ ] Support NaNs
+- swap w/ np.nanmean() n othrs...
+- [ ] Adding `.quantile()` and `.iqr()` interquartile range 
+- [ ] Distribution shapes: skewness n kurtosis
+- [ ] `.corr()` correlation matrix btwn columns
+- [ ] `.sem()` std error mean
+- [ ] `.mad()` median absolute deviation
 
+___
 
+~ Titutiger
