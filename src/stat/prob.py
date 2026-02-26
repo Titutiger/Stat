@@ -1,7 +1,5 @@
 # prob.py
 
-from utils import _conv
-
 def fact(obj: int) -> float:
     if not isinstance(obj, int) or obj < 0:
         raise ValueError("`obj` must be a non-negative natural number.")
