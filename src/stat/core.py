@@ -14,7 +14,7 @@ class Stat:
         self.data = self._transform(data)
         self._validate()
 
-        self.dim = self.data.shape[1]
+        self.dim = self.data.shape[1] if self.is_df else 1
 
     # =========================
     # Magic Methods
@@ -37,6 +37,12 @@ class Stat:
     # =========================
     # Internal Utilities
     # =========================
+
+    @property
+    def shape(self):
+        if self.is_df:
+            return self.data.shape
+        return self.data.shape
 
     @staticmethod
     def _transform(obj: Any, to: str = 'np.ndarray') -> np.ndarray | pd.DataFrame:
@@ -67,40 +73,38 @@ class Stat:
             raise ValueError("Data cannot be empty.")
 
     # Helper to apply 1D logic to either a 1D array or across DataFrame columns
-    def _apply(self, func, *args, **kwargs):
+    #def _apply(self, func, *args, **kwargs):
+    #    if self.is_df:
+    #        return self.data.apply(lambda col: func(col.values, *args, **kwargs))
+    #    return func(self.data, *args, **kwargs)
+
+    def _apply(self, func, target_column: str = None, *args, **kwargs):
         if self.is_df:
+            # If a specific column is requested
+            if target_column is not None:
+                # Case-insensitive lookup
+                col_map = {str(c).lower(): c for c in self.data.columns}
+                col_name = str(target_column).lower()
+
+                if col_name not in col_map:
+                    raise ValueError(f"Column '{target_column}' not found.")
+
+                # Extract the underlying numpy array for that column and run the func
+                return func(self.data[col_map[col_name]].values, *args, **kwargs)
+
+            # Default behavior: run on all numeric columns
             return self.data.apply(lambda col: func(col.values, *args, **kwargs))
+
+        # Logic for 1D arrays (lists/numpy)
         return func(self.data, *args, **kwargs)
 
-    """
-    def _apply(self, func, series: str = None, *args, **kwargs):
-        if self.is_df:
-            if series is not None:
-                # Create a lowercase mapping of columns for case-insensitive matching
-                col_map = {str(c).lower(): c for c in self.data.columns}
-                series_lower = str(series).lower()
-                
-                if series_lower not in col_map:
-                    raise ValueError(f"Column '{series}' not found in the DataFrame.")
-                
-                actual_col = col_map[series_lower]
-                return func(self.data[actual_col].values, *args, **kwargs)
-                
-            # If no series is specified, apply to all columns as usual
-            return self.data.apply(lambda col: func(col.values, *args, **kwargs))
-            
-        else:
-            if series is not None:
-                raise ValueError("Cannot specify 'series' for 1-dimensional array data.")
-            return func(self.data, *args, **kwargs)
-    """
 
     # =========================
     # Descriptive Statistics
     # =========================
 
 
-    def mean(self, method: str = "arithmetic") -> Union[float, pd.Series]:
+    def mean(self, method: str = "arithmetic", series: str = None) -> Union[float, pd.Series]:
         def _mean(arr):
             method_clean = method.lower()
             n = len(arr)
@@ -122,9 +126,9 @@ class Stat:
             else:
                 raise ValueError("Invalid mean method.")
 
-        return self._apply(_mean)
+        return self._apply(_mean, target_column=series)
 
-    def median(self) -> Union[float, pd.Series]:
+    def median(self, series: str = None) -> Union[float, pd.Series]:
         def _median(arr):
             sorted_data = np.sort(arr)
             n = len(sorted_data)
@@ -135,18 +139,18 @@ class Stat:
             else:
                 return float((sorted_data[mid - 1] + sorted_data[mid]) / 2)
 
-        return self._apply(_median)
+        return self._apply(_median, target_column=series)
 
-    def mode(self) -> Union[float, pd.Series]:
+    def mode(self, series: str = None) -> Union[float, pd.Series]:
         def _mode(arr):
             values, counts = np.unique(arr, return_counts=True)
             max_count = np.max(counts)
             modes = values[counts == max_count]
             return float(modes[0])  # Returns first mode if multimodal
 
-        return self._apply(_mode)
+        return self._apply(_mode, target_column=series)
 
-    def variance(self, sample: bool = False) -> Union[float, pd.Series]:
+    def variance(self, sample: bool = False, series: str = None) -> Union[float, pd.Series]:
         def _variance(arr):
             n = len(arr)
             if sample and n < 2:
@@ -157,34 +161,33 @@ class Stat:
             denominator = n - 1 if sample else n
             return float(np.sum(squared_diffs) / denominator)
 
-        return self._apply(_variance)
+        return self._apply(_variance, series)
 
-    def std(self, sample: bool = False) -> Union[float, pd.Series]:
-        # Variance already handles the 1D/2D routing, so we can just square root the result
-        var = self.variance(sample=sample)
-        return var.apply(math.sqrt) if self.is_df else float(math.sqrt(var))
+    def std(self, sample: bool = False, series: str = None) -> Union[float, pd.Series]:
+        var = self.variance(sample=sample, series=series)
+        return var.apply(math.sqrt) if isinstance(var, pd.Series) else float(math.sqrt(var))
 
-    def min(self) -> Union[float, pd.Series]:
-        return self._apply(np.min)
+    def min(self, series: str = None) -> Union[float, pd.Series]:
+        return self._apply(np.min, series)
 
-    def max(self) -> Union[float, pd.Series]:
-        return self._apply(np.max)
+    def max(self, series: str = None) -> Union[float, pd.Series]:
+        return self._apply(np.max, series)
 
-    def range(self) -> Union[float, pd.Series]:
-        return self.max() - self.min()
+    def range(self, series: str = None) -> Union[float, pd.Series]:
+        return self.max(series=series) - self.min(series=series)
 
-    def summary(self) -> Union[dict, pd.DataFrame]:
+    def summary(self, series: str = None) -> Union[dict, pd.DataFrame]:
         stats = {
-            "mean": self.mean(),
-            "median": self.median(),
-            "variance": self.variance(),
-            "std": self.std(),
-            "min": self.min(),
-            "max": self.max(),
-            "range": self.range(),
+            "mean": self.mean(series=series),
+            "median": self.median(series=series),
+            "variance": self.variance(series=series),
+            "std": self.std(series=series),
+            "min": self.min(series=series),
+            "max": self.max(series=series),
+            "range": self.range(series=series),
         }
 
-        if self.is_df:
+        if self.is_df and series is None:
             # Convert dictionary of Series into a neatly formatted DataFrame
             return pd.DataFrame(stats)
         return stats
