@@ -12,5 +12,5 @@ df = pd.DataFrame(data)
 # init with pd.DataFrame:
 df = Stat(df)
 
-print(df.summary())
-print(df.mean(method='g'))
+#print(df.summary())
+print(df.mean(method='a', series='age'))
