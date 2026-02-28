@@ -84,7 +84,27 @@ print(round(data.mode(), 4))
 print(round(data.range(), 4))
 >>> 5.0
 ```
+___
+`__add__()`:
+```python
+import src.stat.core as Stat
 
+a = Stat([1, 2, 3, 4])
+b = Stat([5, 6, 7, 8])
+
+print(a + b)
+>>> [1. 2. 3. 4. 5. 6. 7. 8.]
+
+```
+
+`.shape`
+```python
+import src.stat.core as Stat
+
+a = Stat([1, 3, 2])
+print(a.shape)
+>>> (3,)
+```
 ___
 ###### For pd.DataFrame*
 ___
@@ -111,12 +131,17 @@ print(df.mean(method='g'))
 >>> Salary    58405.843101
 >>> dtype: float64
 
+# Mean/func of specific column:
+print(df.mean('a', 'age'))
+>>> 35.0
+
 # and the same ...
 
 print(df.summary())
 >>>            mean   median    variance          std    min    max  range
 >>> Age        35.0     35.0        50.0     7.071068     25     45     20
 >>> Salary  58800.0  58000.0  47360000.0  6881.860214  50000  70000  20000
+# Summary can also accept specified columns.
 ```
 
 ___
