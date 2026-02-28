@@ -9,9 +9,30 @@ from typing import Any, Union
 
 class Stat:
     def __init__(self, data: Any):
+        self.is_1d = False
         self.is_df = isinstance(data, pd.DataFrame) # checks for pd.DataFrame dtype
         self.data = self._transform(data)
         self._validate()
+
+        self.dim = self.data.shape[1]
+
+    # =========================
+    # Magic Methods
+    # =========================
+
+    def __add__(self, other):
+        if not isinstance(other, Stat):
+            raise TypeError('Can only add another Stat object.')
+
+        if self.is_df or other.is_df:
+            #combined = pd.concat([self.data, other.data], ignore_index=True)
+            ...
+        else:
+            combined = np.concatenate((self.data, other.data))
+        return Stat(combined)
+
+    def __repr__(self):
+        return f'{self.data}'
 
     # =========================
     # Internal Utilities
@@ -28,28 +49,56 @@ class Stat:
         """
 
         if isinstance(obj, pd.DataFrame):
+            # drops non-number items
             numeric_df = obj.select_dtypes(include=[np.number])
             return numeric_df
 
-        try: arr = np.asarray(obj, dtype=float)
-        except Exception as e: raise ValueError(f'Could not convert input because:\n{e}')
+        try:
+            arr = np.asarray(obj, dtype=float)
+            return arr
+        except Exception as e:
+            raise ValueError(f'Could not convert input because:\n{e}')
 
 
     def _validate(self) -> None:
-        if self.data.ndim and self.is_df != 1:
+        if not self.is_df and self.data.ndim != 1:
             raise ValueError("Data must be 1-dimensional.")
         if len(self.data) == 0 or (self.is_df and self.data.empty):
             raise ValueError("Data cannot be empty.")
-
-    # =========================
-    # Descriptive Statistics
-    # =========================
 
     # Helper to apply 1D logic to either a 1D array or across DataFrame columns
     def _apply(self, func, *args, **kwargs):
         if self.is_df:
             return self.data.apply(lambda col: func(col.values, *args, **kwargs))
         return func(self.data, *args, **kwargs)
+
+    """
+    def _apply(self, func, series: str = None, *args, **kwargs):
+        if self.is_df:
+            if series is not None:
+                # Create a lowercase mapping of columns for case-insensitive matching
+                col_map = {str(c).lower(): c for c in self.data.columns}
+                series_lower = str(series).lower()
+                
+                if series_lower not in col_map:
+                    raise ValueError(f"Column '{series}' not found in the DataFrame.")
+                
+                actual_col = col_map[series_lower]
+                return func(self.data[actual_col].values, *args, **kwargs)
+                
+            # If no series is specified, apply to all columns as usual
+            return self.data.apply(lambda col: func(col.values, *args, **kwargs))
+            
+        else:
+            if series is not None:
+                raise ValueError("Cannot specify 'series' for 1-dimensional array data.")
+            return func(self.data, *args, **kwargs)
+    """
+
+    # =========================
+    # Descriptive Statistics
+    # =========================
+
 
     def mean(self, method: str = "arithmetic") -> Union[float, pd.Series]:
         def _mean(arr):
