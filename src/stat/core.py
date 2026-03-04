@@ -95,7 +95,7 @@ class Stat:
             # Default behavior: run on all numeric columns
             return self.data.apply(lambda col: func(col.values, *args, **kwargs))
 
-        # Logic for 1D arrays (lists/numpy)
+        # Logic for 1D arrays i.e (lists/numpy)
         return func(self.data, *args, **kwargs)
 
 
@@ -104,10 +104,18 @@ class Stat:
     # =========================
 
 
-    def mean(self, method: str = "arithmetic", series: str = None) -> Union[float, pd.Series]:
+    def mean(self, method: str = "arithmetic", series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _mean(arr):
-            method_clean = method.lower()
+            # NaNs
+            if skipna:
+                arr = arr[~np.isnan(arr)] # here, ~ finds the opposite.
+                # if isnan finds the NaNs, then ~isnan finds the NOT NaNs.
             n = len(arr)
+
+            if n == 0:
+                return float('non')
+
+            method_clean = method.lower()
 
             if method_clean in ("a", "ari", "arithmetic"):
                 return float(np.sum(arr) / n)
@@ -128,10 +136,15 @@ class Stat:
 
         return self._apply(_mean, target_column=series)
 
-    def median(self, series: str = None) -> Union[float, pd.Series]:
+    def median(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _median(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
+            n = len(arr)
+            if n == 0:
+                return float('nan')
+
             sorted_data = np.sort(arr)
-            n = len(sorted_data)
             mid = n // 2
 
             if n % 2 == 1:
@@ -141,8 +154,13 @@ class Stat:
 
         return self._apply(_median, target_column=series)
 
-    def mode(self, series: str = None) -> Union[float, pd.Series]:
+    def mode(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _mode(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
+            if len(arr) == 0:
+                return float('nan')
+
             values, counts = np.unique(arr, return_counts=True)
             max_count = np.max(counts)
             modes = values[counts == max_count]
@@ -150,11 +168,15 @@ class Stat:
 
         return self._apply(_mode, target_column=series)
 
-    def variance(self, sample: bool = False, series: str = None) -> Union[float, pd.Series]:
+# ---------
+
+    def variance(self, sample: bool = False, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _variance(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
             n = len(arr)
-            if sample and n < 2:
-                raise ValueError("Sample variance requires at least 2 data points.")
+            if n == 0 or (sample and n < 2):
+                return float('nan')
 
             mean_value = np.mean(arr)
             squared_diffs = (arr - mean_value) ** 2
@@ -163,28 +185,84 @@ class Stat:
 
         return self._apply(_variance, series)
 
-    def std(self, sample: bool = False, series: str = None) -> Union[float, pd.Series]:
-        var = self.variance(sample=sample, series=series)
+    def std(self, sample: bool = False, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        var = self.variance(sample=sample, series=series, skipna=skipna)
         return var.apply(math.sqrt) if isinstance(var, pd.Series) else float(math.sqrt(var))
 
-    def min(self, series: str = None) -> Union[float, pd.Series]:
-        return self._apply(np.min, series)
+    def mad(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        def _mad(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
+            if len(arr) == 0:
+                return float('nan')
+            dataset_median = np.median(arr)
+            ab_dev = np.abs(arr - dataset_median)
+            return float(np.mean(ab_dev))
+        return self._apply(_mad, target_column=series)
 
-    def max(self, series: str = None) -> Union[float, pd.Series]:
-        return self._apply(np.max, series)
+    def percentile(self, q: float, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        if not (0 <= q <= 100):
+            raise ValueError("Percentile 'q' must be between 0 and 100.")
 
-    def range(self, series: str = None) -> Union[float, pd.Series]:
-        return self.max(series=series) - self.min(series=series)
+        def _percentile(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
 
-    def summary(self, series: str = None) -> Union[dict, pd.DataFrame]:
+            if len(arr) == 0:
+                return float('nan')
+
+            return float(np.percentile(arr, q))
+
+        return self._apply(_percentile, target_column=series)
+
+    def quantile(self, q: float, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        if not (0.0 <= q <= 1.0):
+            raise ValueError("Quantile 'q' must be between 0.0 and 1.0.")
+
+        return self.percentile(q * 100, series=series, skipna=skipna)
+
+    def iqr(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        q3 = self.quantile(0.75, series=series, skipna=skipna)
+        q1 = self.quantile(0.25, series=series, skipna=skipna)
+        return q3 - q1
+
+# ---------
+
+    def min(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        def _min(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
+            if len(arr) == 0:
+                return float('nan')
+            return float(np.min(arr))
+        return self._apply(_min, series)
+
+    def max(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        def _max(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
+            if len(arr) == 0:
+                return float('nan')
+            return float(np.max(arr))
+
+        return self._apply(_max, target_column=series)
+
+    def range(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
+        return self.max(series=series, skipna=skipna) - self.min(series=series, skipna=skipna)
+
+    def summary(self, series: str = None, skipna: bool = True) -> Union[dict, pd.DataFrame]:
         stats = {
-            "mean": self.mean(series=series),
-            "median": self.median(series=series),
-            "variance": self.variance(series=series),
-            "std": self.std(series=series),
-            "min": self.min(series=series),
-            "max": self.max(series=series),
-            "range": self.range(series=series),
+            "mean": self.mean(series=series, skipna=skipna),
+            "median": self.median(series=series, skipna=skipna),
+            "variance": self.variance(series=series, skipna=skipna),
+            "std": self.std(series=series, skipna=skipna),
+            "mad": self.mad(series=series, skipna=skipna),
+            "25%": self.percentile(q=25, series=series, skipna=skipna),
+            "75%": self.percentile(q=75, series=series, skipna=skipna),
+            "iqr": self.iqr(series=series, skipna=skipna),
+            "min": self.min(series=series, skipna=skipna),
+            "max": self.max(series=series, skipna=skipna),
+            "range": self.range(series=series, skipna=skipna),
         }
 
         if self.is_df and series is None:
