@@ -1,160 +1,172 @@
 # Welcome to Stat
-###### A program made for statistics using python. ~ Titutiger
 
-## Project details:
-> Version: 1.0.0
-> 
-> Python: 3.12
-> 
-> Libraries:
-> - numpy
-> - pandas
-> - math
-> - typing
+###### A program made for statistics using Python. ~ *Titutiger*
 
-Currently, the following files have
-the following functionality:
-> core.py
-> - includes core statistics.
-> 
-> prob.py
-> - includes functions to aid with probability.
-> 
-> utils.py
-> - currently contains an equation solver.
+---
 
-___
+## 📌 Project Details
 
-## Init:
-Basic initialization:
+* **Version:** 1.0.0
+* **Python:** 3.12+
+* **Core Libraries:**
+* `numpy`
+* `pandas`
+* `math`
+* `typing`
+
+
+
+### File Structure
+
+Currently, the module is divided into the following files based on functionality:
+
+* **`core.py`** — Includes the core descriptive statistics logic and the main `Stat` class.
+* **`prob.py`** — Includes functions to aid with probability calculations.
+* **`utils.py`** — Currently contains an equation solver.
+
+---
+
+## Initialization
+
+Basic initialization requires importing the `Stat` class and passing in your data.
+
 ```python
 from src.stat.core import Stat
 
-data = Stat([array])
-```
-> ###### Converts [array] -> np.ndarray
-
-Example:
-```python
+# Initializes and converts the list -> np.ndarray under the hood
 data = Stat([4, 8, 6, 5, 3, 8])
+
 ```
 
-## Core Operations:
-___
-###### For 1D arrays*
-___
+---
+
+## Core Operations
+
+### 1D Arrays (Lists / NumPy)
+
+**Mean**
+The `mean()` method takes one argument, `method: str`, which defaults to `'arithmetic'`. It also accepts `'g'` (geometric) and `'h'` (harmonic).
+
 ```python
-# mean:
+# Arithmetic (Default)
 print(round(data.mean(), 4))
->>> 5.667
-```
-> Herein `data.mean()` takes 1 argument `method: str`
-> wherein it's default value is `arithmetic`.
-> 
-> `data.mean()` can accept:
-> `(a)rithmetic`, `(g)eometric` and `(h)armonic`.
+>>> 5.6667
 
-```python
+# Geometric
 print(round(data.mean('g'), 4))
 >>> 5.3343
 
+# Harmonic
 print(round(data.mean('h'), 4))
 >>> 5.0
+
 ```
-___
+
+**Median**
+The `median()` method includes a `return_index: bool` argument (defaults to `False`).
+
 ```python
-# median
 print(round(data.median(), 4))
 >>> 5.5
-```
-> Herein `data.median` has 1 argument
-> `return_index: bool` which is set to `False`.
-> 
-> If true:
->```python
-> print(round(data.median(True), 4))
-> >>> {'index': (3,2), 'value': 5.5}
->```
 
-___
+# If return_index is set to True:
+print(data.median(True))
+>>> {'index': (3, 2), 'value': 5.5}
+
+```
+
+**Mode & Range**
+
 ```python
 print(round(data.mode(), 4))
 >>> 8.0
 
 print(round(data.range(), 4))
 >>> 5.0
+
 ```
-___
-`__add__()`:
+
+**Magic Methods & Properties**
+The `Stat` class supports operator overloading for simple combinations and includes properties for data inspection.
+
 ```python
-import src.stat.core as Stat
+from src.stat.core import Stat
 
 a = Stat([1, 2, 3, 4])
 b = Stat([5, 6, 7, 8])
 
+# __add__()
 print(a + b)
 >>> [1. 2. 3. 4. 5. 6. 7. 8.]
 
-```
-
-`.shape`
-```python
-import src.stat.core as Stat
-
-a = Stat([1, 3, 2])
+# .shape property
 print(a.shape)
->>> (3,)
+>>> (4,)
+
 ```
-___
-###### For pd.DataFrame*
-___
+
+---
+
+### Pandas DataFrames
+
+`Stat` seamlessly handles multi-dimensional tabular data when initialized with a `pd.DataFrame`.
 
 ```python
 import pandas as pd
 from src.stat.core import Stat
 
 data = {
-    'Employee': ['Alice', 'Bob', 'Charlie',
-                 'Diana', 'Evan'],
+    'Employee': ['Alice', 'Bob', 'Charlie', 'Diana', 'Evan'],
     'Age': [25, 30, 35, 40, 45],
     'Salary': [50_000, 54_000, 62_000, 70_000, 58_000]
 }
 df = pd.DataFrame(data)
 
-# init with pd.DataFrame:
+# Init with pd.DataFrame:
 df = Stat(df)
+
 ```
-Core Operations:
+
+**DataFrame Operations**
+Operations automatically apply to all numeric columns unless a specific column is targeted.
+
 ```python
+# Geometric mean of all numeric columns
 print(df.mean(method='g'))
 >>> Age          34.267338
 >>> Salary    58405.843101
 >>> dtype: float64
 
-# Mean/func of specific column:
-print(df.mean('a', 'age'))
+# Function applied to a specific column (case-insensitive)
+print(df.mean(method='a', series='age'))
 >>> 35.0
 
-# and the same ...
+```
 
+**The Summary Method**
+Generates a comprehensive statistical breakdown. The summary can also be filtered by passing a specific column to the `series` argument.
+
+```python
 print(df.summary())
 >>>            mean   median    variance          std    min    max  range
 >>> Age        35.0     35.0        50.0     7.071068     25     45     20
 >>> Salary  58800.0  58000.0  47360000.0  6881.860214  50000  70000  20000
-# Summary can also accept specified columns.
+
 ```
 
-___
+---
 
-Future Updates:
-- [ ] Support NaNs
-- swap w/ np.nanmean() n othrs...
-- [ ] Adding `.quantile()` and `.iqr()` interquartile range 
-- [ ] Distribution shapes: skewness n kurtosis
-- [ ] `.corr()` correlation matrix btwn columns
-- [ ] `.sem()` std error mean
-- [ ] `.mad()` median absolute deviation
+## Roadmap & Future Updates
 
-___
+* [x] Support NaNs (Swap w/ `np.nanmean()` logic and skipna integrations)
+* [x] Add `.quantile()` and `.iqr()` (Interquartile Range)
+* [x] Add `.mad()` (Median Absolute Deviation)
+* [ ] Distribution shapes: Skewness and Kurtosis
+* [ ] Add `.corr()` for a correlation matrix between columns
+* [ ] Add `.sem()` for Standard Error of the Mean
 
-~ Titutiger
+---
+
+*~ Titutiger*
+
+---
