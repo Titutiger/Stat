@@ -14,7 +14,11 @@
 * `math`
 * `typing`
 
-
+---
+## Idea
+A symbolic + numeric statistical modeling engine
+that automatically derives likelihoods, gradients, and diagnostics.
+---
 
 ### File Structure
 
@@ -158,12 +162,92 @@ print(df.summary())
 
 ## Roadmap & Future Updates
 
+Basic:
 * [x] Support NaNs (Swap w/ `np.nanmean()` logic and skipna integrations)
 * [x] Add `.quantile()` and `.iqr()` (Interquartile Range)
 * [x] Add `.mad()` (Median Absolute Deviation)
 * [ ] Distribution shapes: Skewness and Kurtosis
 * [ ] Add `.corr()` for a correlation matrix between columns
 * [ ] Add `.sem()` for Standard Error of the Mean
+* [ ] Performance:
+* vectorized operations
+* numpy-backed arrays
+* Numba KIT
+* [ ] Stability:
+* log-likelihood implementations
+* avoid catastrophic cancellation
+* stable variance formulae
+* stable CDF computations
+* [ ] Add all discrete distributions:
+* binomial, poisson, geometric, negative binomail
+* [ ] Add all continuous distributions:
+* normal, exponential, gamma, beta, t-distribution, chi-square
+* Each distribution should support: pdf, cdf, rvs, ppf, mean, variance, entropy
+* and vectorized input support.
+* [ ] tests: z-test, t-test, chi-square test, ANOVA
+* power analysis and effect size computation.
+* [ ] regression: linear, logistic, regularization, GLMs
+* [ ] differentiation:
+* symbolic derivation of likelihood functions, automatic MLE solving,
+* symbolic to numeric conversion, auto differentiation.
+* Stat + symbolic math!!!!!!!!!!!!!!!!!!!!
+
+Advanced:
+* [ ] Comparison tables:
+* against SciPy
+* [ ] Packaging:
+* semantic versioning
+* proper wheels
+* [ ] Models:
+```python
+model = LinearModel(...)
+model.diagnose()
+```
+* multicollinearity detection,
+* residual analysis
+* heteroscedasticity tests
+* influence measures
+* [ ] Bayesian Module
+* conjugate priors, posterior computation, MCMC sampling
+* Gibbs sampling, variational inference.
+* [ ] Time Series
+* AR, MA, ARIMA, Forecast intervals, seasonality detection
+* [ ] Uncertainty Propogation
+* Taylor expansion
+* Monte Carlo simulation
+
+
+---
+
+---
+# Prob
+`Prob` is like `stat` but instead of statistics,
+it handles probability.
+
+## Initialization
+Basic initialization requires importing
+the `Prob` class and passing in your daya.
+
+```python
+from src.stat.prob import Prob
+
+outcomes = [100_000, 40_000, -20_000]
+probabilities = [0.20, 0.50, 0.30]
+```
+
+### `E(X) or expected value`:
+```python
+ev = Prob.expected_value(outomes, probabilities)
+>>> 34,000.00
+```
+
+### `Binomial P.M.F (probability mass function)`:
+```python
+bpmf = Prob.binomial_pmf(n=20, k=2, p=0.05)
+>>> 0.1887
+```
+
+
 
 ---
 
