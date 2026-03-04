@@ -136,6 +136,9 @@ class Stat:
 
         return self._apply(_mean, target_column=series)
 
+    # alias
+    x = mean
+
     def median(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _median(arr):
             if skipna:
@@ -154,6 +157,9 @@ class Stat:
 
         return self._apply(_median, target_column=series)
 
+    # ALIAS
+    med = median
+
     def mode(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _mode(arr):
             if skipna:
@@ -167,6 +173,9 @@ class Stat:
             return float(modes[0])  # Returns first mode if multimodal
 
         return self._apply(_mode, target_column=series)
+
+    # alias
+    mod = mode
 
 # ---------
 
@@ -184,6 +193,9 @@ class Stat:
             return float(np.sum(squared_diffs) / denominator)
 
         return self._apply(_variance, series)
+
+    # alias
+    var = variance
 
     def std(self, sample: bool = False, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         var = self.variance(sample=sample, series=series, skipna=skipna)
@@ -215,11 +227,17 @@ class Stat:
 
         return self._apply(_percentile, target_column=series)
 
+    # alias
+    ptile = percentile
+
     def quantile(self, q: float, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         if not (0.0 <= q <= 1.0):
             raise ValueError("Quantile 'q' must be between 0.0 and 1.0.")
 
         return self.percentile(q * 100, series=series, skipna=skipna)
+
+    # alias
+    qtile = quantile
 
     def iqr(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         q3 = self.quantile(0.75, series=series, skipna=skipna)
