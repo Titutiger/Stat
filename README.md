@@ -1,6 +1,7 @@
-# Welcome to Stat
+# Stat 
+A Symbolic & Numeric Statistical Engine
 
-###### A program made for statistics using Python. ~ *Titutiger*
+###### *A statistics and probability library built for Python.* ~ *Titutiger*
 
 ---
 
@@ -8,250 +9,209 @@
 
 * **Version:** 1.0.0
 * **Python:** 3.12+
-* **Core Libraries:**
-* `numpy`
-* `pandas`
-* `math`
-* `typing`
-* `scipy`
-
----
-## Idea
-A symbolic + numeric statistical modeling engine
-that automatically derives likelihoods, gradients, and diagnostics.
----
-
-### File Structure
-
-Currently, the module is divided into the following files based on functionality:
-
-* **`core.py`** — Includes the core descriptive statistics logic and the main `Stat` class.
-* **`prob.py`** — Includes functions to aid with probability calculations.
-* **`utils.py`** — Currently contains an equation solver.
+* **Core Dependencies:** `numpy`, `pandas`, `scipy`
+* **Testing Framework:** `pytest`
 
 ---
 
-## Initialization
+## 💡 The Vision
 
-Basic initialization requires importing the `Stat` class and passing in your data.
+`Stat` is designed to be a hybrid statistical modeling engine. 
+It bridges the gap between descriptive, observational data and abstract, 
+standalone probability models. Future iterations will introduce a fully 
+symbolic mathematics core, allowing for automatic derivation of likelihoods, 
+gradients, and diagnostics.
 
-```python
-from src.stat.core import Stat
+---
 
-# Initializes and converts the list -> np.ndarray under the hood
-data = Stat([4, 8, 6, 5, 3, 8])
+## 🏗️ Project Architecture
+
+The library is built using a highly scalable mixin architecture, 
+separating data representation from mathematical operations.
+
+```text
+Stat/
+├── src/
+│   └── stat/
+│       ├── core/               # The numeric engine (Stat object, mixins, factory)
+│       │   ├── operations.py   # Descriptive math (mean, variance, corr, etc.)
+│       │   └── represent.py    # Data container & factory function
+│       ├── distributions/      # Object-oriented probability distributions
+│       │   ├── base.py         # Abstract base classes
+│       │   ├── continuous.py   # Normal, Gamma, Beta, Exponential, etc.
+│       │   └── ...             # Standalone discrete files (Poisson, Binomial)
+│       ├── utils/              # Helper functions (e.g., grouped data parsers)
+│       ├── api.py              # Public-facing API integrations
+│       └── prob.py             # Foundational probability theorems
+├── tests/                      # Comprehensive pytest suite
+│   ├── core/                   # Engine tests
+│   └── distributions/          # Model accuracy tests
+├── FUTURE.md                   # Advanced roadmap & symbolic engine plans
+├── requirements.txt            # Environment dependencies
+└── main.py                     # Sandbox environment
 
 ```
 
 ---
 
-## Core Operations
+## 🚀 Quick Start
 
-### 1D Arrays (Lists / NumPy)
-
-**Mean**
-The `mean()` method takes one argument, `method: str`, which defaults to `'arithmetic'`. It also accepts `'g'` (geometric) and `'h'` (harmonic).
+Basic initialization requires importing the package and passing your data 
+into the `represent()` function. This acts as the gateway to the `Stat` engine, 
+similar to `np.array()`.
 
 ```python
-# Arithmetic (Default)
-print(round(data.mean(), 4))
+import src.stat as stat
+
+# Automatically converts lists to optimized NumPy arrays under the hood
+data = stat.represent([4, 8, 6, 5, 3, 8])
+
+print(data.mean())
 >>> 5.6667
 
-# Geometric
-print(round(data.mean('g'), 4))
->>> 5.3343
-
-# Harmonic
-print(round(data.mean('h'), 4))
->>> 5.0
-
-```
-
-**Median**
-The `median()` method includes a `return_index: bool` argument (defaults to `False`).
-
-```python
-print(round(data.median(), 4))
->>> 5.5
-
-# If return_index is set to True:
-print(data.median(True))
->>> {'index': (3, 2), 'value': 5.5}
-
-```
-
-**Mode & Range**
-
-```python
-print(round(data.mode(), 4))
->>> 8.0
-
-print(round(data.range(), 4))
->>> 5.0
-
-```
-
-**Magic Methods & Properties**
-The `Stat` class supports operator overloading for simple combinations and includes properties for data inspection.
-
-```python
-from src.stat.core import Stat
-
-a = Stat([1, 2, 3, 4])
-b = Stat([5, 6, 7, 8])
-
-# __add__()
-print(a + b)
->>> [1. 2. 3. 4. 5. 6. 7. 8.]
-
-# .shape property
-print(a.shape)
->>> (4,)
-
 ```
 
 ---
 
-### Pandas DataFrames
+## 🧮 Core Operations
 
-`Stat` seamlessly handles multi-dimensional tabular data when initialized with a `pd.DataFrame`.
+### 1D Arrays & Descriptive Statistics
+
+The `Stat` object supports a massive suite of descriptive statistics 
+out of the box, cleanly handling `NaN` values and supporting sample vs. 
+population toggles.
+
+```python
+# Averages (Arithmetic, Geometric, Harmonic)
+print(data.mean(method='g'))
+>>> 5.3343
+
+# Spread & Shape
+print(data.iqr())
+>>> 3.25
+
+print(data.sem()) # Standard Error of the Mean
+>>> 0.881
+
+```
+
+### Pandas DataFrames & 2D Data
+
+`Stat` seamlessly handles multi-dimensional tabular data when initialized 
+with a `pd.DataFrame`. It automatically isolates numeric data, preventing 
+string-parsing crashes.
 
 ```python
 import pandas as pd
-from src.stat.core import Stat
+import src.stat as stat
 
-data = {
-    'Employee': ['Alice', 'Bob', 'Charlie', 'Diana', 'Evan'],
+df = pd.DataFrame({
     'Age': [25, 30, 35, 40, 45],
     'Salary': [50_000, 54_000, 62_000, 70_000, 58_000]
-}
-df = pd.DataFrame(data)
+})
 
-# Init with pd.DataFrame:
-df = Stat(df)
+hr_stats = stat.represent(df)
 
-```
-
-**DataFrame Operations**
-Operations automatically apply to all numeric columns unless a specific column is targeted.
-
-```python
-# Geometric mean of all numeric columns
-print(df.mean(method='g'))
->>> Age          34.267338
->>> Salary    58405.843101
->>> dtype: float64
-
-# Function applied to a specific column (case-insensitive)
-print(df.mean(method='a', series='age'))
+# Target specific columns case-insensitively
+print(hr_stats.mean(series='age'))
 >>> 35.0
 
+# Generate a Correlation Matrix
+print(hr_stats.corr(method='pearson'))
+
 ```
 
-**The Summary Method**
-Generates a comprehensive statistical breakdown. The summary can also be filtered by passing a specific column to the `series` argument.
+**The Summary Method:** Generates a comprehensive statistical 
+breakdown across all columns.
 
 ```python
-print(df.summary())
->>>            mean   median    variance          std    min    max  range
->>> Age        35.0     35.0        50.0     7.071068     25     45     20
->>> Salary  58800.0  58000.0  47360000.0  6881.860214  50000  70000  20000
+print(hr_stats.summary())
+>>>            mean   median   variance       std       sem  ...
+>>> Age        35.0     35.0       50.0   7.07106   3.16227  ...
+>>> Salary  58800.0  58000.0   47360000  6881.860  3077.661  ...
 
 ```
 
 ---
 
-## Roadmap & Future Updates
+## 📈 Distributions Engine
 
-Basic:
-* [x] Support NaNs (Swap w/ `np.nanmean()` logic and skipna integrations)
-* [x] Add `.quantile()` and `.iqr()` (Interquartile Range)
-* [x] Add `.mad()` (Median Absolute Deviation)
-* [ ] Distribution shapes: Skewness and Kurtosis
-* [x] Add `.corr()` for a correlation matrix between columns
-* [x] Add `.sem()` for Standard Error of the Mean
-* [ ] Performance:
-* vectorized operations
-* numpy-backed arrays
-* Numba KIT
-* [ ] Stability:
-* log-likelihood implementations
-* avoid catastrophic cancellation
-* stable variance formulae
-* stable CDF computations
-* [x] Add all discrete distributions:
-* binomial, poisson, geometric, negative binomail
-* [x] Add all continuous distributions:
-* normal, exponential, gamma, beta, t-distribution, chi-square
-* Each distribution should support: pdf, cdf, rvs, ppf, mean, variance, entropy
-* and vectorized input support.
-* [ ] tests: z-test, t-test, chi-square test, ANOVA
-* power analysis and effect size computation.
-* [ ] regression: linear, logistic, regularization, GLMs
-* [ ] differentiation:
-* symbolic derivation of likelihood functions, automatic MLE solving,
-* symbolic to numeric conversion, auto differentiation.
-* Stat + symbolic math!!!!!!!!!!!!!!!!!!!!
+The `distributions/` module features a robust suite of standalone 
+mathematical models with full support for vectorized inputs via SciPy and NumPy.
 
-Advanced:
-* [ ] Comparison tables:
-* against SciPy
-* [ ] Packaging:
-* semantic versioning
-* proper wheels
-* [ ] Models:
+### Continuous Distributions
+
+Includes `Normal`, `Exponential`, `Gamma`, `Beta`, `TDistribution`, and `ChiSquare`. Each supports `.pdf()`, `.cdf()`, `.ppf()` (inverse CDF), `.rvs()` (random sampling), `.mean()`, `.variance()`, and `.entropy()`.
+
 ```python
-model = LinearModel(...)
-model.diagnose()
+# Find the exact 95th percentile of a Normal Distribution
+norm = stat.Normal(mu=100, sigma=15)
+print(f"95th Percentile: {norm.ppf(0.95):.2f}") 
+
 ```
-* multicollinearity detection,
-* residual analysis
-* heteroscedasticity tests
-* influence measures
-* [ ] Bayesian Module
-* conjugate priors, posterior computation, MCMC sampling
-* Gibbs sampling, variational inference.
-* [ ] Time Series
-* AR, MA, ARIMA, Forecast intervals, seasonality detection
-* [ ] Uncertainty Propogation
-* Taylor expansion
-* Monte Carlo simulation
 
+### Discrete Distributions
+
+Includes `Binomial`, `Poisson`, `Geometric`, and `NegativeBinomial`.
+
+```python
+# Vectorized PMF for a Binomial distribution
+coin = stat.Binomial(n=10, p=0.5)
+print(coin.pmf([3, 4, 5])) 
+
+```
 
 ---
 
----
-# Prob
-`Prob` is like `stat` but instead of statistics,
-it handles probability.
+## 🎲 Foundational Probability (`prob.py`)
 
-## Initialization
-Basic initialization requires importing
-the `Prob` class and passing in your daya.
+Handles core probability theorems and discrete expectations.
 
 ```python
 from src.stat.prob import Prob
 
 outcomes = [100_000, 40_000, -20_000]
 probabilities = [0.20, 0.50, 0.30]
+
+print(Prob.expected_value(outcomes, probabilities))
+>>> 34000.00
+
 ```
-
-### `E(X) or expected value`:
-```python
-ev = Prob.expected_value(outomes, probabilities)
->>> 34,000.00
-```
-
-### `Binomial P.M.F (probability mass function)`:
-```python
-bpmf = Prob.binomial_pmf(n=20, k=2, p=0.05)
->>> 0.1887
-```
-
-
 
 ---
 
-*~ Titutiger*
+## 🧪 Testing
+
+This project utilizes `pytest` to ensure mathematical accuracy across the engine.
+To run the test suite, simply navigate to the root directory and execute:
+
+```bash
+pytest -v
+
+```
 
 ---
+
+## 🛣️ Roadmap
+
+*For advanced feature planning, see `FUTURE.md`.*
+
+### Completed Features ✅
+
+* Seamless `NaN` handling and `np.nanmean()` logic.
+* Robust spread metrics: `iqr()`, `mad()`, `sem()`.
+* Distribution shape metrics: `skewness()`, `kurtosis()`.
+* Feature relationship mapping via `.corr()`.
+* Object-oriented discrete probability models (Binomial, Poisson, Geometric, Negative Binomial).
+* Highly optimized, vectorized continuous probability models (Normal, Exponential, Gamma, Beta, T-Dist, Chi-Square).
+
+### Upcoming Features 🚀
+
+* **Hypothesis Testing:** Z-tests, T-tests, Chi-Square, ANOVA.
+* **Regression Module:** Linear, Logistic, and GLMs.
+* **Symbolic Engine:** Auto-differentiation, symbolic likelihood derivation, and automatic MLE solving.
+
+---
+
+*Developed by Titutiger*
+
