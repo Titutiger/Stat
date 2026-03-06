@@ -1,3 +1,5 @@
+![Status](https://img.shields.io/badge/status-alpha-orange)
+
 # Stat 
 A Symbolic & Numeric Statistical Engine
 
@@ -7,7 +9,7 @@ A Symbolic & Numeric Statistical Engine
 
 ## 📌 Project Details
 
-* **Version:** 1.0.0
+* **Version:** v0.1.0-alpha
 * **Python:** 3.12+
 * **Core Dependencies:** `numpy`, `pandas`, `scipy`
 * **Testing Framework:** `pytest`
