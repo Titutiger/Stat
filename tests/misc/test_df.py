@@ -1,5 +1,5 @@
 import pandas as pd
-from src.stat.core import Stat
+from src.stat import Stat
 
 data = {
     'Employee': ['Alice', 'Bob', 'Charlie',
