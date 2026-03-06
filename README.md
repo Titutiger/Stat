@@ -13,6 +13,7 @@
 * `pandas`
 * `math`
 * `typing`
+* `scipy`
 
 ---
 ## Idea
@@ -167,8 +168,8 @@ Basic:
 * [x] Add `.quantile()` and `.iqr()` (Interquartile Range)
 * [x] Add `.mad()` (Median Absolute Deviation)
 * [ ] Distribution shapes: Skewness and Kurtosis
-* [ ] Add `.corr()` for a correlation matrix between columns
-* [ ] Add `.sem()` for Standard Error of the Mean
+* [x] Add `.corr()` for a correlation matrix between columns
+* [x] Add `.sem()` for Standard Error of the Mean
 * [ ] Performance:
 * vectorized operations
 * numpy-backed arrays
@@ -178,9 +179,9 @@ Basic:
 * avoid catastrophic cancellation
 * stable variance formulae
 * stable CDF computations
-* [ ] Add all discrete distributions:
+* [x] Add all discrete distributions:
 * binomial, poisson, geometric, negative binomail
-* [ ] Add all continuous distributions:
+* [x] Add all continuous distributions:
 * normal, exponential, gamma, beta, t-distribution, chi-square
 * Each distribution should support: pdf, cdf, rvs, ppf, mean, variance, entropy
 * and vectorized input support.
