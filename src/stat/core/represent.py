@@ -6,9 +6,14 @@ from typing import Any
 from .operations import DescriptiveMixin
 
 
-class Stat(DescriptiveMixin):  # <--- Inherits all operations!
+class Stat(DescriptiveMixin):
     def __init__(self, data: Any, tag: str = "other"):
-        self.is_1d = False
+        if isinstance(data, pd.DataFrame):
+            self.raw_df = data.copy()
+        else:
+            self.raw_df = None
+
+        self.is_1d = not isinstance(data, pd.Series)
         self.is_df = isinstance(data, pd.DataFrame)
         self.data = self._transform(data)
         self._validate()
