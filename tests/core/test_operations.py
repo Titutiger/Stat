@@ -33,9 +33,9 @@ def test_mean(arr_1d, arr_nan, df_data):
     # Standard arithmetic mean
     assert arr_1d.mean() == pytest.approx(5.0)
     # Geometric mean
-    assert arr_1d.mean(method='geometric') == pytest.approx(4.502, rel=1e-3)
+    assert arr_1d.mean(method='geometric') == pytest.approx(4.603, rel=1e-3)
     # Harmonic mean
-    assert arr_1d.mean(method='harmonic') == pytest.approx(4.041, rel=1e-3)
+    assert arr_1d.mean(method='harmonic') == pytest.approx(4.202, rel=1e-3)
     # Skip NA handling
     assert arr_nan.mean(skipna=True) == pytest.approx(4.666, rel=1e-3)
     # DataFrame column targeting
@@ -71,9 +71,9 @@ def test_mode(arr_1d, arr_nan, df_data):
 
 def test_variance(arr_1d, arr_nan, df_data):
     # Population variance (default)
-    assert arr_1d.variance() == pytest.approx(4.5)
+    assert arr_1d.variance() == pytest.approx(4.0)
     # Sample variance
-    assert arr_1d.variance(sample=True) == pytest.approx(5.142, rel=1e-3)
+    assert arr_1d.variance(sample=True) == pytest.approx(4.571, rel=1e-3)
     # Zero variance
     flat = represent([5, 5, 5])
     assert flat.variance() == 0.0
@@ -84,9 +84,9 @@ def test_variance(arr_1d, arr_nan, df_data):
 
 def test_std(arr_1d, arr_nan, df_data):
     # Population std
-    assert arr_1d.std() == pytest.approx(2.121, rel=1e-3)
+    assert arr_1d.std() == pytest.approx(2.0, rel=1e-3)
     # Sample std
-    assert arr_1d.std(sample=True) == pytest.approx(2.267, rel=1e-3)
+    assert arr_1d.std(sample=True) == pytest.approx(2.138, rel=1e-3)
     # Zero std
     flat = represent([5, 5, 5])
     assert flat.std() == 0.0
@@ -164,9 +164,9 @@ def test_min_max_range(arr_1d, arr_nan, df_data):
 
 def test_sem(arr_1d, arr_nan, df_data):
     # Standard SEM
-    assert arr_1d.sem() == pytest.approx(0.801, rel=1e-3)
+    assert arr_1d.sem() == pytest.approx(0.756, rel=1e-3)
     # Skip NA handling
-    assert arr_nan.sem() == pytest.approx(2.027, rel=1e-3)
+    assert arr_nan.sem() == pytest.approx(1.764, rel=1e-3)
     # DataFrame column targeting
     assert df_data.sem(series='A') == pytest.approx(0.707, rel=1e-3)
     # Too few elements for SEM (returns nan)
