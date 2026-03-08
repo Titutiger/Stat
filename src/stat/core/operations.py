@@ -167,6 +167,116 @@ class DescriptiveMixin:
 
     # ---------
 
+    def frequencies(self, series: str) -> pd.Series:
+        """
+        Returns the counts of unique values in a categorical column.
+        (Answers: "What is the most frequent model?")
+        """
+        if self.raw_df is None:
+            raise TypeError("Frequencies require a Pandas DataFrame.")
+        if series not in self.raw_df.columns:
+            raise ValueError(f"Column '{series}' not found in the raw data.")
+
+        # Return the counts, sorted highest to lowest
+        return self.raw_df[series].value_counts()
+
+    def groupby(self, by: str, operation: str = 'mean') -> pd.DataFrame:
+        """
+        Groups the data by a categorical column and performs math on the numeric columns.
+        (Answers: "What is the mean battery life FOR EACH machine?")
+        """
+        if self.raw_df is None:
+            raise TypeError("GroupBy requires a Pandas DataFrame.")
+        if by not in self.raw_df.columns:
+            raise ValueError(f"Category column '{by}' not found.")
+
+        # Group the raw data by your chosen column
+        grouped = self.raw_df.groupby(by)
+
+        # Apply the requested math, ignoring string columns automatically!
+        if operation.lower() == 'mean':
+            return grouped.mean(numeric_only=True)
+        elif operation.lower() == 'median':
+            return grouped.median(numeric_only=True)
+        elif operation.lower() in ['std', 'standard_deviation']:
+            return grouped.std(numeric_only=True)
+        elif operation.lower() in ['max', 'maximum']:
+            return grouped.max(numeric_only=True)
+        elif operation.lower() in ['min', 'minimum']:
+            return grouped.min(numeric_only=True)
+        else:
+            raise ValueError(f"Operation '{operation}' not currently supported in groupby.")
+
+    def skewness(self, series: str = None, skipna: bool = True, sample: bool = True) -> Union[float, pd.Series]:
+        """Calculates the skewness (asymmetry) of the dataset."""
+
+        def _skew(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
+            n = len(arr)
+
+            # Sample skewness requires at least 3 data points
+            if n < 3 and sample:
+                return float('nan')
+            elif n == 0:
+                return float('nan')
+
+            mean_val = np.mean(arr)
+
+            # Calculate the 2nd and 3rd central moments
+            m2 = np.sum((arr - mean_val) ** 2) / n
+            m3 = np.sum((arr - mean_val) ** 3) / n
+
+            if m2 == 0:
+                return 0.0
+
+            # Population skewness formula
+            pop_skew = m3 / (m2 ** 1.5)
+
+            if sample:
+                # Fisher-Pearson standardized moment coefficient for sample skewness
+                return float(pop_skew * np.sqrt(n * (n - 1)) / (n - 2))
+
+            return float(pop_skew)
+
+        return self._apply(_skew, target_column=series)
+
+    def kurtosis(self, series: str = None, skipna: bool = True, sample: bool = True) -> Union[float, pd.Series]:
+        """Calculates the excess kurtosis (tailedness) of the dataset."""
+
+        def _kurtosis(arr):
+            if skipna:
+                arr = arr[~np.isnan(arr)]
+            n = len(arr)
+
+            # Sample kurtosis requires at least 4 data points
+            if n < 4 and sample:
+                return float('nan')
+            elif n == 0:
+                return float('nan')
+
+            mean_val = np.mean(arr)
+
+            # Calculate the 2nd and 4th central moments
+            m2 = np.sum((arr - mean_val) ** 2) / n
+            m4 = np.sum((arr - mean_val) ** 4) / n
+
+            if m2 == 0:
+                return 0.0
+
+            # Population excess kurtosis formula (subtracting 3 normalizes a normal dist to 0)
+            pop_kurt = m4 / (m2 ** 2) - 3.0
+
+            if sample:
+                # Sample excess kurtosis formula
+                val1 = (n - 1) / ((n - 2) * (n - 3))
+                val2 = (n + 1) * pop_kurt + 6
+                return float(val1 * val2)
+
+            return float(pop_kurt)
+
+        return self._apply(_kurtosis, target_column=series)
+
     def min(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _min(arr):
             if skipna:
@@ -196,8 +306,10 @@ class DescriptiveMixin:
             "median": self.median(series=series, skipna=skipna),
             "variance": self.variance(series=series, skipna=skipna),
             "std": self.std(series=series, skipna=skipna),
-            "sem": self.sem(series=series, skipna=skipna),       # <--- Added SEM here!
+            "sem": self.sem(series=series, skipna=skipna),
             "mad": self.mad(series=series, skipna=skipna),
+            "skewness": self.skewness(series=series, skipna=skipna),
+            "kurtosis": self.kurtosis(series=series, skipna=skipna),
             "25%": self.percentile(q=25, series=series, skipna=skipna),
             "75%": self.percentile(q=75, series=series, skipna=skipna),
             "iqr": self.iqr(series=series, skipna=skipna),
@@ -209,3 +321,5 @@ class DescriptiveMixin:
         if self.is_df and series is None:
             return pd.DataFrame(stats)
         return stats
+
+# ======================================================================================================================
