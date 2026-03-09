@@ -23,6 +23,9 @@ class Normal(ContinuousDistribution):
     def variance(self): return self.sigma**2
     def entropy(self): return 0.5 * np.log(2 * np.pi * np.e * self.sigma**2)
 
+    def __repr__(self):
+        return f"Normal(mu={self.mu}, sigma={self.sigma})"
+
 class Exponential(ContinuousDistribution):
     def __init__(self, lam: float = 1.0):
         if lam <= 0: raise ValueError("Lambda must be > 0.")
@@ -41,6 +44,9 @@ class Exponential(ContinuousDistribution):
     def mean(self): return 1 / self.lam
     def variance(self): return 1 / (self.lam**2)
     def entropy(self): return 1 - np.log(self.lam)
+
+    def __repr__(self):
+        return f"Exponential(lam={self.lam})"
 
 class Gamma(ContinuousDistribution):
     def __init__(self, alpha: float, beta: float):
@@ -64,6 +70,9 @@ class Gamma(ContinuousDistribution):
     def entropy(self):
         return self.alpha - np.log(self.beta) + sp.gammaln(self.alpha) + (1 - self.alpha) * sp.digamma(self.alpha)
 
+    def __repr__(self):
+        return f"Gamma(alpha={self.alpha}, beta={self.beta})"
+
 class Beta(ContinuousDistribution):
     def __init__(self, a: float, b: float):
         if a <= 0 or b <= 0: raise ValueError("Alpha (a) and Beta (b) must be > 0.")
@@ -84,6 +93,9 @@ class Beta(ContinuousDistribution):
     def variance(self): return (self.a * self.b) / (((self.a + self.b)**2) * (self.a + self.b + 1))
     def entropy(self):
         return np.log(sp.beta(self.a, self.b)) - (self.a - 1)*sp.digamma(self.a) - (self.b - 1)*sp.digamma(self.b) + (self.a + self.b - 2)*sp.digamma(self.a + self.b)
+
+    def __repr__(self):
+        return f"Beta(a={self.a}, b={self.b})"
 
 class TDistribution(ContinuousDistribution):
     def __init__(self, df: float):
@@ -106,6 +118,9 @@ class TDistribution(ContinuousDistribution):
     def entropy(self):
         half_df = self.df / 2
         return ((self.df + 1) / 2) * (sp.digamma((self.df + 1) / 2) - sp.digamma(half_df)) + np.log(np.sqrt(self.df) * sp.beta(half_df, 0.5))
+
+    def __repr__(self):
+        return f"TDistribution(df={self.df})"
 
 class ChiSquare(Gamma):
     """
