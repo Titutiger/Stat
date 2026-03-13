@@ -1,7 +1,24 @@
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 
-# Stat 
-A Symbolic & Numeric Statistical Engine
+```commandline
+
+
+██▄       ▄██████  ████████   ▄████▄   ████████ 
+████▄    ███▒▒▒▒▒  ▒▒███▒▒▒  ███▒▒███  ▒▒███▒▒▒ 
+██████▄  ███████▄    ███    ███    ███   ███    
+██████▀  ▒▒▒▒▒███    ███    ██████████   ███    
+████▀    ▀██████▀    ███    ███▒▒▒▒███   ███    
+██▀       ▒▒▒▒▒▒     ▒▒▒    ▒▒▒    ▒▒▒   ▒▒▒    
+
+
+┌────────────────────────────────────────────────────────────────────────┐
+│ A symbolic and numerical statistical engine.                           │
+│ A statistics and probability library built for python.                 │
+└────────────────────────────────────────────────────────────────────────┘
+
+                                                           ~ Titutiger
+``` 
+
 
 ###### *A statistics and probability library built for Python.* ~ *Titutiger*
 
@@ -34,7 +51,7 @@ separating data representation from mathematical operations.
 ```text
 Stat/
 ├── src/
-│   └── stat/
+│   └── stat/ (Old)
 │       ├── core/               # The numeric engine (Stat object, mixins, factory)
 │       │   ├── operations.py   # Descriptive math (mean, variance, corr, etc.)
 │       │   └── represent.py    # Data container & factory function
@@ -42,15 +59,18 @@ Stat/
 │       │   ├── base.py         # Abstract base classes
 │       │   ├── continuous.py   # Normal, Gamma, Beta, Exponential, etc.
 │       │   └── ...             # Standalone discrete files (Poisson, Binomial)
+│       ├── inferential.py      # Hypothesis testing (T-tests, Z-tests, ANOVA, etc.)
 │       ├── utils/              # Helper functions (e.g., grouped data parsers)
 │       ├── api.py              # Public-facing API integrations
 │       └── prob.py             # Foundational probability theorems
 ├── tests/                      # Comprehensive pytest suite
 │   ├── core/                   # Engine tests
-│   └── distributions/          # Model accuracy tests
+│   ├── distributions/          # Model accuracy tests
+│   └── inferential/            # Hypothesis testing verification
 ├── FUTURE.md                   # Advanced roadmap & symbolic engine plans
 ├── requirements.txt            # Environment dependencies
 └── main.py                     # Sandbox environment
+
 
 ```
 
@@ -206,10 +226,10 @@ pytest -v
 * Feature relationship mapping via `.corr()`.
 * Object-oriented discrete probability models (Binomial, Poisson, Geometric, Negative Binomial).
 * Highly optimized, vectorized continuous probability models (Normal, Exponential, Gamma, Beta, T-Dist, Chi-Square).
+* **Inferential Statistics:** Vectorized T-tests (one-sample, two-sample, paired), Z-tests, One-way ANOVA, and Chi-Square Goodness of Fit.
 
 ### Upcoming Features 🚀
 
-* **Hypothesis Testing:** Z-tests, T-tests, Chi-Square, ANOVA.
 * **Regression Module:** Linear, Logistic, and GLMs.
 * **Symbolic Engine:** Auto-differentiation, symbolic likelihood derivation, and automatic MLE solving.
 
