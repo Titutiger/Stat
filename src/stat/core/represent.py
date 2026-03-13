@@ -4,9 +4,10 @@ import numpy as np
 import pandas as pd
 from typing import Any
 from .operations import DescriptiveMixin
+from ..inferential import InferentialMixin
 
 
-class Stat(DescriptiveMixin):
+class Stat(DescriptiveMixin, InferentialMixin):
     def __init__(self, data: Any, tag: str = "other"):
         if isinstance(data, pd.DataFrame):
             self.raw_df = data.copy()
