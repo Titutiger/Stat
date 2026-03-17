@@ -26,7 +26,7 @@
 
 ## 📌 Project Details
 
-* **Version:** v0.1.0-alpha
+* **Version:** v0.1.2-alpha
 * **Python:** 3.12+
 * **Core Dependencies:** `numpy`, `pandas`, `scipy`
 * **Testing Framework:** `pytest`
@@ -47,32 +47,6 @@ gradients, and diagnostics.
 
 The library is built using a highly scalable mixin architecture, 
 separating data representation from mathematical operations.
-
-```text
-Stat/
-├── src/
-│   └── stat/ (Old)
-│       ├── core/               # The numeric engine (Stat object, mixins, factory)
-│       │   ├── operations.py   # Descriptive math (mean, variance, corr, etc.)
-│       │   └── represent.py    # Data container & factory function
-│       ├── distributions/      # Object-oriented probability distributions
-│       │   ├── base.py         # Abstract base classes
-│       │   ├── continuous.py   # Normal, Gamma, Beta, Exponential, etc.
-│       │   └── ...             # Standalone discrete files (Poisson, Binomial)
-│       ├── inferential.py      # Hypothesis testing (T-tests, Z-tests, ANOVA, etc.)
-│       ├── utils/              # Helper functions (e.g., grouped data parsers)
-│       ├── api.py              # Public-facing API integrations
-│       └── prob.py             # Foundational probability theorems
-├── tests/                      # Comprehensive pytest suite
-│   ├── core/                   # Engine tests
-│   ├── distributions/          # Model accuracy tests
-│   └── inferential/            # Hypothesis testing verification
-├── FUTURE.md                   # Advanced roadmap & symbolic engine plans
-├── requirements.txt            # Environment dependencies
-└── main.py                     # Sandbox environment
-
-
-```
 
 ---
 
@@ -232,6 +206,7 @@ pytest -v
 
 * **Regression Module:** Linear, Logistic, and GLMs.
 * **Symbolic Engine:** Auto-differentiation, symbolic likelihood derivation, and automatic MLE solving.
+* **Graphers:** Graphs for certain functions (including Regression)
 
 ---
 
