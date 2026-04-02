@@ -15,9 +15,13 @@ manufacturing_data = pd.DataFrame({
     'Machine_ID':         ['M1', 'M1', 'M2', 'M1', 'M1', 'M2', 'M2', 'M1', 'M1', 'M1']
 })
 
+
+
 # 1. Convert the raw data into a Stat object
 # Note: It will automatically ignore the string column ('Machine_ID')!
 batch_stats = stat.represent(manufacturing_data)
+
+batch_stats.show()
 
 print("--- BATCH SUMMARY ---")
 # Get a bird's-eye view of the manufacturing consistency
