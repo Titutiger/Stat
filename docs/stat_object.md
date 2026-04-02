@@ -38,3 +38,38 @@ The `Stat` object uses an internal `_apply` method. This means every statistical
 1. **1D Data**: Returns a single float.
 2. **DataFrames**: Calculates the statistic for every numeric column and returns a Series.
 3. **Targeting**: You can pass `series='column_name'` to calculate the statistic for just one column in a DataFrame.
+
+---
+
+## Visual Representation
+
+The `Stat` object supports enhanced terminal display using the `rich` library. This is purely for visualization; the underlying data remains a Pandas DataFrame or NumPy array.
+
+### `show(title='Stat Object',theme=None)`
+Displays the data as a formatted table in the terminal.
+
+- **`theme` (str, optional)**: Specify a color palette. If not provided, it uses the object's `theme` property (defaulting to "default").
+
+### Available Themes
+| Theme     | Description | Colors |
+|:----------| :--- | :--- |
+| `cyan`    | Standard clean look | Cyan / White |
+| `ocean`   | Marine aesthetic | Blue / Teal |
+| `forest`  | Nature-inspired | Green / Yellow |
+| `sunset`  | High contrast | Magenta / Orange |
+| `default` | Grayscale / ASCII | White / Grey |
+
+### Example
+```python
+s = stat.represent(my_dataframe)
+
+# Default view
+s.show()
+
+# Change the default theme for this object
+s.theme = "forest"
+s.show()
+
+# Override for a single call
+s.show(theme="sunset")
+```
