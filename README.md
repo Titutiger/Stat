@@ -64,7 +64,19 @@ data = stat.represent([4, 8, 6, 5, 3, 8])
 
 print(data.mean())
 >>> 5.6667
+```
 
+### 🎨 Rich Representation
+
+`Stat` now supports beautiful terminal-based data visualization using the `rich` library. You can display your data objects with various themes.
+
+```python
+# Display with the default theme
+data.show()
+
+# Choose from multiple color palettes
+data.show(theme="ocean")  # Blue/Teal
+data.show(theme="sunset") # Magenta/Orange
 ```
 
 ---
