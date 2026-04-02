@@ -2,9 +2,17 @@
 
 import numpy as np
 import pandas as pd
-from typing import Any
+from typing import Any, Optional
 from .operations import DescriptiveMixin
 from ..inferential import InferentialMixin
+
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich import box
+    HAS_RICH = True
+except ImportError:
+    HAS_RICH = False
 
 
 class Stat(DescriptiveMixin, InferentialMixin):
@@ -21,6 +29,7 @@ class Stat(DescriptiveMixin, InferentialMixin):
 
         self.tag = tag
         self.dim = self.data.shape[1] if self.is_df else 1
+        self.theme = "default"
 
     # =========================
     # Magic Methods & Properties
@@ -37,7 +46,84 @@ class Stat(DescriptiveMixin, InferentialMixin):
         return represent(combined)  # Uses the factory function to return a new object!
 
     def __repr__(self):
+        if HAS_RICH and self.theme:
+            # Return a string that rich can handle if printed, 
+            # but for standard REPL we might still want a string.
+            # However, usually in interactive sessions, we want to see the table.
+            return f"Stat(tag='{self.tag}', theme='{self.theme}')"
         return f"Stat(tag='{self.tag}', data=\n{self.data})"
+
+    def show(self, title: str = f'Stat Object',theme: Optional[str] = None):
+        """Displays the data using Rich tables if available, otherwise falls back to pandas."""
+        current_theme = theme or self.theme
+        
+        if not HAS_RICH:
+            print(self.data)
+            return
+
+        console = Console()
+        df = self.data if self.is_df else pd.DataFrame(self.data, columns=["Value"])
+        
+        # Define theme palettes
+        themes = {
+            "cyan": {
+                "header": "bold cyan",
+                "index": "cyan",
+                "row": "white",
+                "box_style": box.ROUNDED
+            },
+            "ocean": {
+                "header": "bold dodger_blue1",
+                "index": "deep_sky_blue1",
+                "row": "light_cyan1",
+                "box_style": box.ROUNDED
+            },
+            "forest": {
+                "header": "bold spring_green3",
+                "index": "green3",
+                "row": "pale_green1",
+                "box_style": box.HEAVY
+            },
+            "sunset": {
+                "header": "bold hot_pink",
+                "index": "orange1",
+                "row": "light_goldenrod1",
+                "box_style": box.DOUBLE
+            },
+            "default": {
+                "header": "bold white on grey27",
+                "index": "grey70",
+                "row": "grey93",
+                "box_style": box.ASCII
+            }
+        }
+        
+        selected_theme = themes.get(current_theme, themes["default"])
+        
+        table = Table(
+            title=title,
+            box=selected_theme["box_style"],
+            header_style=selected_theme["header"]
+        )
+        
+        table.add_column("Index", justify="right", style=selected_theme["index"], no_wrap=True)
+            
+        for column in df.columns:
+            table.add_column(str(column), style=selected_theme["row"])
+            
+        # Limit rows shown for large datasets
+        max_rows = 20
+        rows_to_show = df.head(max_rows)
+        
+        for index, row in rows_to_show.iterrows():
+            row_values = [str(val) for val in row]
+            row_values.insert(0, str(index))
+            table.add_row(*row_values)
+            
+        if len(df) > max_rows:
+            table.add_row("...", *["..." for _ in df.columns])
+            
+        console.print(table)
 
     @property
     def shape(self):
