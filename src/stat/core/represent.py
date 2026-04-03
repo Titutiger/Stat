@@ -2,14 +2,14 @@
 
 import numpy as np
 import pandas as pd
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from .operations import DescriptiveMixin
 from ..inferential import InferentialMixin
+from ..themes import THEMES, get_rich_box
 
 try:
     from rich.console import Console
     from rich.table import Table
-    from rich import box
     HAS_RICH = True
 except ImportError:
     HAS_RICH = False
@@ -53,9 +53,9 @@ class Stat(DescriptiveMixin, InferentialMixin):
             return f"Stat(tag='{self.tag}', theme='{self.theme}')"
         return f"Stat(tag='{self.tag}', data=\n{self.data})"
 
-    def show(self, title: str = f'Stat Object',theme: Optional[str] = None):
+    def show(self, title: str = f'Stat Object', theme: Optional[str] = None):
         """Displays the data using Rich tables if available, otherwise falls back to pandas."""
-        current_theme = theme or self.theme
+        current_theme_name = theme or self.theme
         
         if not HAS_RICH:
             print(self.data)
@@ -64,52 +64,18 @@ class Stat(DescriptiveMixin, InferentialMixin):
         console = Console()
         df = self.data if self.is_df else pd.DataFrame(self.data, columns=["Value"])
         
-        # Define theme palettes
-        themes = {
-            "cyan": {
-                "header": "bold cyan",
-                "index": "cyan",
-                "row": "white",
-                "box_style": box.ROUNDED
-            },
-            "ocean": {
-                "header": "bold dodger_blue1",
-                "index": "deep_sky_blue1",
-                "row": "light_cyan1",
-                "box_style": box.ROUNDED
-            },
-            "forest": {
-                "header": "bold spring_green3",
-                "index": "green3",
-                "row": "pale_green1",
-                "box_style": box.HEAVY
-            },
-            "sunset": {
-                "header": "bold hot_pink",
-                "index": "orange1",
-                "row": "light_goldenrod1",
-                "box_style": box.DOUBLE
-            },
-            "default": {
-                "header": "bold white on grey27",
-                "index": "grey70",
-                "row": "grey93",
-                "box_style": box.ASCII
-            }
-        }
-        
-        selected_theme = themes.get(current_theme, themes["default"])
+        theme_cfg = THEMES.get(current_theme_name, THEMES["default"])["rich"]
         
         table = Table(
             title=title,
-            box=selected_theme["box_style"],
-            header_style=selected_theme["header"]
+            box=get_rich_box(theme_cfg["box_style"]),
+            header_style=theme_cfg["header"]
         )
         
-        table.add_column("Index", justify="right", style=selected_theme["index"], no_wrap=True)
+        table.add_column("Index", justify="right", style=theme_cfg["index"], no_wrap=True)
             
         for column in df.columns:
-            table.add_column(str(column), style=selected_theme["row"])
+            table.add_column(str(column), style=theme_cfg["row"])
             
         # Limit rows shown for large datasets
         max_rows = 20
@@ -124,6 +90,23 @@ class Stat(DescriptiveMixin, InferentialMixin):
             table.add_row("...", *["..." for _ in df.columns])
             
         console.print(table)
+
+    def plot(self, columns: Optional[Union[str, list]] = None, title: Optional[str] = None, theme: Optional[str] = None, **kwargs):
+        """Displays graphs using matplotlib and seaborn with theme support."""
+        from ..graphs.plotter import plot_stat
+        
+        current_theme_name = theme or self.theme
+        plot_title = title or f"Stat Plot ({self.tag})"
+        
+        plot_stat(
+            data=self.data,
+            is_df=self.is_df,
+            is_1d=self.is_1d,
+            theme_name=current_theme_name,
+            title=plot_title,
+            columns=columns,
+            **kwargs
+        )
 
     @property
     def shape(self):
