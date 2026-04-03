@@ -1,6 +1,7 @@
 numpy
 pandas
-math
-typing
 scipy
 rich
+matplotlib
+seaborn
+sympy
