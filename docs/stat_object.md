@@ -72,4 +72,7 @@ s.show()
 
 # Override for a single call
 s.show(theme="sunset")
+
 ```
+
+
