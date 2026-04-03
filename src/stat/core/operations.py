@@ -153,38 +153,42 @@ class DescriptiveMixin:
 
         return self._apply(_sem, target_column=series)
 
-    def corr(self, method: str = "pearson") -> Union[float, pd.DataFrame]:
+    def corr(self, method: str = "pearson") -> Union[float, 'Stat']:
         """
         Calculates the correlation matrix between columns.
         Supported methods: 'pearson', 'kendall', 'spearman'.
         """
+        from .represent import represent
         if not self.is_df:
             # A 1D array perfectly correlates with itself
             return 1.0
 
             # Pandas automatically handles NaN skipping pairwise for correlation matrices!
-        return self.data.corr(method=method)
+        return represent(self.data.corr(method=method))
 
     # ---------
 
-    def frequencies(self, series: str) -> pd.Series:
+    def frequencies(self, series: str) -> 'Stat':
         """
         Returns the counts of unique values in a categorical column.
         (Answers: "What is the most frequent model?")
         """
+        from .represent import represent
         if self.raw_df is None:
             raise TypeError("Frequencies require a Pandas DataFrame.")
         if series not in self.raw_df.columns:
             raise ValueError(f"Column '{series}' not found in the raw data.")
 
         # Return the counts, sorted highest to lowest
-        return self.raw_df[series].value_counts()
+        counts = self.raw_df[series].value_counts()
+        return represent(pd.DataFrame(counts))
 
-    def groupby(self, by: str, operation: str = 'mean') -> pd.DataFrame:
+    def groupby(self, by: str, operation: str = 'mean') -> 'Stat':
         """
         Groups the data by a categorical column and performs math on the numeric columns.
         (Answers: "What is the mean battery life FOR EACH machine?")
         """
+        from .represent import represent
         if self.raw_df is None:
             raise TypeError("GroupBy requires a Pandas DataFrame.")
         if by not in self.raw_df.columns:
@@ -195,17 +199,19 @@ class DescriptiveMixin:
 
         # Apply the requested math, ignoring string columns automatically!
         if operation.lower() == 'mean':
-            return grouped.mean(numeric_only=True)
+            res = grouped.mean(numeric_only=True)
         elif operation.lower() == 'median':
-            return grouped.median(numeric_only=True)
+            res = grouped.median(numeric_only=True)
         elif operation.lower() in ['std', 'standard_deviation']:
-            return grouped.std(numeric_only=True)
+            res = grouped.std(numeric_only=True)
         elif operation.lower() in ['max', 'maximum']:
-            return grouped.max(numeric_only=True)
+            res = grouped.max(numeric_only=True)
         elif operation.lower() in ['min', 'minimum']:
-            return grouped.min(numeric_only=True)
+            res = grouped.min(numeric_only=True)
         else:
             raise ValueError(f"Operation '{operation}' not currently supported in groupby.")
+        
+        return represent(res)
 
     def skewness(self, series: str = None, skipna: bool = True, sample: bool = True) -> Union[float, pd.Series]:
         """Calculates the skewness (asymmetry) of the dataset."""
@@ -300,7 +306,8 @@ class DescriptiveMixin:
     def range(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         return self.max(series=series, skipna=skipna) - self.min(series=series, skipna=skipna)
 
-    def summary(self, series: str = None, skipna: bool = True) -> Union[dict, pd.DataFrame]:
+    def summary(self, series: str = None, skipna: bool = True) -> Union['Stat', dict]:
+        from .represent import represent
         stats = {
             "mean": self.mean(series=series, skipna=skipna),
             "median": self.median(series=series, skipna=skipna),
@@ -319,7 +326,12 @@ class DescriptiveMixin:
         }
 
         if self.is_df and series is None:
-            return pd.DataFrame(stats)
+            return represent(pd.DataFrame(stats))
+        
+        # If it's 1D, stats are floats. We can wrap it in a DataFrame for .show() if desired,
+        # but for now let's return the dict as before, but maybe the user wants it pretty too.
+        # Let's return a Stat object even for 1D summary if requested.
         return stats
+
 
 # ======================================================================================================================
