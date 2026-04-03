@@ -21,11 +21,20 @@ manufacturing_data = pd.DataFrame({
 # Note: It will automatically ignore the string column ('Machine_ID')!
 batch_stats = stat.represent(manufacturing_data)
 
-batch_stats.show()
+batch_stats.show('Data for Battery Factory', theme='ocean')
 
-print("--- BATCH SUMMARY ---")
+# Example of plotting specific columns
+# 1. Plot all numeric columns (default)
+# batch_stats.plot(title="All Factory Metrics", theme='ocean')
+
+# 2. Plot only Battery_Life_Hours
+# batch_stats.plot(columns="Battery_Life_Hours", title="Battery Life Distribution", theme='ocean', kind="hist")
+
+# 3. Plot specific two columns (Scatter plot)
+# batch_stats.plot(columns=["Factory_Temp_C", "Battery_Life_Hours"], title="Temp vs Life", theme='ocean')
+
 # Get a bird's-eye view of the manufacturing consistency
-print(batch_stats.summary())
+batch_stats.summary().show('Batch Summary', theme='ocean')
 
 # Specifically isolate the mean and standard deviation of the battery life
 mean_life = batch_stats.mean(series='Battery_Life_Hours')
@@ -43,9 +52,7 @@ print(f"Standard Deviation: {std_life:.2f} hours")
 # We use the correlation matrix to find relationships between variables.
 
 
-print("\n--- FACTORY CONDITION CORRELATIONS ---")
-corr_matrix = batch_stats.corr(method='pearson')
-print(corr_matrix)
+batch_stats.corr(method='pearson').show('Factory Condition Correlations', theme='ocean')
 # Insight: If the correlation between Factory_Temp_C and Battery_Life_Hours
 # is highly negative (e.g., -0.85), we can definitively tell the engineering
 # team that a hotter factory floor produces worse batteries.
@@ -120,3 +127,6 @@ if net_roi > 0:
     print("Conclusion: Approve the HVAC upgrade.")
 else:
     print("Conclusion: Reject the HVAC upgrade.")
+
+
+batch_stats.plot(columns="Humidity_Pct", theme='ocean')
