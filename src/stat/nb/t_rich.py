@@ -20,62 +20,37 @@ def df_to_table(
         - sunset: Magenta/Orange/Yellow
         - mono: B&W grayscale
     """
-    # Define theme palettes
-    themes = {
-        "default": {
-            "header": "bold cyan",
-            "index": "cyan",
-            "row": "white",
-            "box_style": "ROUNDED" # Default rich box
-        },
-        "ocean": {
-            "header": "bold dodger_blue1",
-            "index": "deep_sky_blue1",
-            "row": "light_cyan1",
-            "box_style": "ROUNDED"
-        },
-        "forest": {
-            "header": "bold spring_green3",
-            "index": "green3",
-            "row": "pale_green1",
-            "box_style": "HEAVY"
-        },
-        "sunset": {
-            "header": "bold red",
-            "index": "orange1",
-            "row": "light_goldenrod1",
-            "box_style": "DOUBLE"
-        },
-        "mono": {
-            "header": "bold white on grey27",
-            "index": "grey70",
-            "row": "grey93",
-            "box_style": "ASCII"
-        }
-    }
-    
-    selected_theme = themes.get(theme, themes["default"])
-    
-    # Import box styles dynamically if needed
-    from rich import box
-    box_map = {
-        "ROUNDED": box.ROUNDED,
-        "HEAVY": box.HEAVY,
-        "DOUBLE": box.DOUBLE,
-        "ASCII": box.ASCII
-    }
+    # src/stat/nb/t_rich.py
+
+import pandas as pd
+from rich.console import Console
+from rich.table import Table
+from typing import Optional
+from ..themes import THEMES, get_rich_box
+
+def df_to_table(
+    df: pd.DataFrame,
+    title: str = "DataFrame",
+    show_index: bool = True,
+    index_name: str = "Index",
+    theme: str = "default"
+) -> Table:
+    """
+    Convert a pandas.DataFrame to a rich.table.Table with theme support.
+    """
+    theme_cfg = THEMES.get(theme, THEMES["default"])["rich"]
     
     table = Table(
         title=title, 
-        box=box_map.get(selected_theme["box_style"]) if selected_theme["box_style"] else box.SQUARE,
-        header_style=selected_theme["header"]
+        box=get_rich_box(theme_cfg["box_style"]),
+        header_style=theme_cfg["header"]
     )
     
     if show_index:
-        table.add_column(index_name, justify="right", style=selected_theme["index"], no_wrap=True)
+        table.add_column(index_name, justify="right", style=theme_cfg["index"], no_wrap=True)
         
     for column in df.columns:
-        table.add_column(str(column), style=selected_theme["row"])
+        table.add_column(str(column), style=theme_cfg["row"])
         
     for index, row in df.iterrows():
         row_values = [str(val) for val in row]
