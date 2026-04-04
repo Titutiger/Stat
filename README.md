@@ -195,8 +195,18 @@ To run the test suite, simply navigate to the root directory and execute:
 
 ```bash
 pytest -v
-
 ```
+
+---
+
+## Asset Files:
+
+`src/stat/nb` is used as a playing ground for testing features. In the `/assets`
+folder, .csv files are present for testing. 
+
+`people-100.csv` is downloaded from [sample-csv-files](https://github.com/datablist/sample-csv-files?tab=readme-ov-file).
+
+> **All of the other .csv files are generate by AI.**
 
 ---
 
