@@ -106,7 +106,8 @@ print(data.sem()) # Standard Error of the Mean
 ### Pandas DataFrames & 2D Data
 
 `Stat` seamlessly handles multi-dimensional tabular data when initialized 
-with a `pd.DataFrame`. It automatically isolates numeric data, preventing 
+with a `pd.DataFrame`. While it preserves all columns (including categorical data), 
+it automatically targets numeric data for calculations to prevent 
 string-parsing crashes.
 
 ```python
@@ -114,19 +115,33 @@ import pandas as pd
 import src.stat as stat
 
 df = pd.DataFrame({
-    'Age': [25, 30, 35, 40, 45],
-    'Salary': [50_000, 54_000, 62_000, 70_000, 58_000]
+    'PatientID': ['P001', 'P002', 'P003'],
+    'Group': ['Control', 'Treatment', 'Control'],
+    'Age': [25, 30, 35],
+    'Salary': [50_000, 54_000, 62_000]
 })
 
 hr_stats = stat.represent(df)
 
-# Target specific columns case-insensitively
-print(hr_stats.mean(series='age'))
->>> 35.0
+# All columns are preserved in .data
+print(hr_stats.data.columns)
+>>> Index(['PatientID', 'Group', 'Age', 'Salary'], dtype='object')
 
-# Generate a Correlation Matrix
-print(hr_stats.corr(method='pearson'))
+# Calculations automatically target numeric columns
+print(hr_stats.mean())
+>>> Age          30.0
+>>> Salary    55333.33
+>>> dtype: float64
 
+# show() hides non-numeric columns by default
+hr_stats.show()
+
+# Use non_numeric=True to see everything
+hr_stats.show(non_numeric=True)
+
+# Control the output size for large datasets
+hr_stats.show(max_rows=10, max_columns=5)
+hr_stats.show(max_rows='all') # Show all rows
 ```
 
 **The Summary Method:** Generates a comprehensive statistical 
