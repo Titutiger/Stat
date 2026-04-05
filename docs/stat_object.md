@@ -31,12 +31,13 @@ The core engine of the library. It inherits from `DescriptiveMixin`, giving it a
 ### Key Properties
 - `tag`: The origin of the data (e.g., 'numpy', 'dataframe').
 - `is_df`: Boolean, true if the data is a Pandas DataFrame.
-- `data`: The underlying cleaned data (numeric columns only).
+- `data`: The underlying data. For DataFrames, this preserves all columns (including non-numeric ones).
+- `dim`: The number of **numeric** columns in the data.
 
 ### Internal Logic: The `_apply` pattern
 The `Stat` object uses an internal `_apply` method. This means every statistical method (like `.mean()`) automatically works on:
 1. **1D Data**: Returns a single float.
-2. **DataFrames**: Calculates the statistic for every numeric column and returns a Series.
+2. **DataFrames**: Calculates the statistic for every **numeric** column and returns a Series.
 3. **Targeting**: You can pass `series='column_name'` to calculate the statistic for just one column in a DataFrame.
 
 ---
@@ -45,10 +46,13 @@ The `Stat` object uses an internal `_apply` method. This means every statistical
 
 The `Stat` object supports enhanced terminal display using the `rich` library. This is purely for visualization; the underlying data remains a Pandas DataFrame or NumPy array.
 
-### `show(title='Stat Object',theme=None)`
+#### `show(title='Stat Object', theme=None, non_numeric=False, max_rows=20, max_columns=None)`
 Displays the data as a formatted table in the terminal.
 
-- **`theme` (str, optional)**: Specify a color palette. If not provided, it uses the object's `theme` property (defaulting to "default").
+- **`theme` (str, optional)**: Specify a color palette.
+- **`non_numeric` (bool)**: If `True`, includes non-numeric columns in the display. Defaults to `False`.
+- **`max_rows` (int|str)**: Maximum number of rows to display. Use `'all'` or `'*'` to show everything. Defaults to `20`.
+- **`max_columns` (int|str)**: Maximum number of columns to display. Use `'all'` or `'*'` to show everything. Defaults to all available columns.
 
 ### Available Themes
 | Theme     | Description | Colors |
