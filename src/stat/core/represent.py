@@ -28,7 +28,10 @@ class Stat(DescriptiveMixin, InferentialMixin):
         self._validate()
 
         self.tag = tag
-        self.dim = self.data.shape[1] if self.is_df else 1
+        if self.is_df:
+            self.dim = self.data.select_dtypes(include=[np.number]).shape[1]
+        else:
+            self.dim = 1
         self.theme = "default"
 
     # =========================
@@ -53,17 +56,41 @@ class Stat(DescriptiveMixin, InferentialMixin):
             return f"Stat(tag='{self.tag}', theme='{self.theme}')"
         return f"Stat(tag='{self.tag}', data=\n{self.data})"
 
-    def show(self, title: str = f'Stat Object', theme: Optional[str] = None):
+    def show(self, title: str = f'Stat Object', theme: Optional[str] = None,
+             non_numeric: bool = False, max_rows: Union[int, str, None] = None, 
+             max_columns: Union[int, str, None] = None):
         """Displays the data using Rich tables if available, otherwise falls back to pandas."""
         current_theme_name = theme or self.theme
         
+        # Prepare the DataFrame to show
+        if self.is_df:
+            df = self.data if non_numeric else self.data.select_dtypes(include=[np.number])
+        else:
+            df = pd.DataFrame(self.data, columns=["Value"])
+
+        # Handle max_rows and max_columns ('all' or '*' means no limit)
+        if max_rows in [None, 'default']:
+            actual_max_rows = 20
+        elif max_rows in ['all', '*']:
+            actual_max_rows = len(df)
+        else:
+            actual_max_rows = int(max_rows)
+
+        if max_columns in [None, 'all', '*']:
+            actual_max_columns = len(df.columns)
+        else:
+            actual_max_columns = int(max_columns)
+
+        # Slice the dataframe based on limits
+        df_to_show = df.iloc[:actual_max_rows, :actual_max_columns]
+        
         if not HAS_RICH:
-            print(self.data)
+            print(df_to_show)
+            if len(df) > actual_max_rows or len(df.columns) > actual_max_columns:
+                print(f"... ({len(df)} rows x {len(df.columns)} columns)")
             return
 
         console = Console()
-        df = self.data if self.is_df else pd.DataFrame(self.data, columns=["Value"])
-        
         theme_cfg = THEMES.get(current_theme_name, THEMES["default"])["rich"]
         
         table = Table(
@@ -74,20 +101,17 @@ class Stat(DescriptiveMixin, InferentialMixin):
         
         table.add_column("Index", justify="right", style=theme_cfg["index"], no_wrap=True)
             
-        for column in df.columns:
+        for column in df_to_show.columns:
             table.add_column(str(column), style=theme_cfg["row"])
             
-        # Limit rows shown for large datasets
-        max_rows = 20
-        rows_to_show = df.head(max_rows)
-        
-        for index, row in rows_to_show.iterrows():
+        for index, row in df_to_show.iterrows():
             row_values = [str(val) for val in row]
             row_values.insert(0, str(index))
             table.add_row(*row_values)
             
-        if len(df) > max_rows:
-            table.add_row("...", *["..." for _ in df.columns])
+        if len(df) > actual_max_rows or len(df.columns) > actual_max_columns:
+            footer_vals = ["..." for _ in df_to_show.columns]
+            table.add_row("...", *footer_vals)
             
         console.print(table)
 
@@ -112,6 +136,13 @@ class Stat(DescriptiveMixin, InferentialMixin):
     def shape(self):
         return self.data.shape
 
+    @property
+    def T(self):
+        """Returns a transposed version of the Stat object."""
+        # Using represent() factory ensures the new object is properly initialized and tagged
+        return represent(self.data.T)
+
+
     # =========================
     # Internal Utilities
     # =========================
@@ -119,7 +150,7 @@ class Stat(DescriptiveMixin, InferentialMixin):
     @staticmethod
     def _transform(obj: Any, to: str = 'np.ndarray') -> np.ndarray | pd.DataFrame:
         if isinstance(obj, pd.DataFrame):
-            return obj.select_dtypes(include=[np.number])
+            return obj
         try:
             return np.asarray(obj, dtype=float)
         except Exception as e:
@@ -139,7 +170,10 @@ class Stat(DescriptiveMixin, InferentialMixin):
                 if col_name not in col_map:
                     raise ValueError(f"Column '{target_column}' not found.")
                 return func(self.data[col_map[col_name]].values, *args, **kwargs)
-            return self.data.apply(lambda col: func(col.values, *args, **kwargs))
+            
+            # Apply only to numeric columns by default
+            numeric_data = self.data.select_dtypes(include=[np.number])
+            return numeric_data.apply(lambda col: func(col.values, *args, **kwargs))
         return func(self.data, *args, **kwargs)
 
 
