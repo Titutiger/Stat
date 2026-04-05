@@ -41,6 +41,16 @@ The `Stat` object uses an internal `_apply` method. This means every statistical
 3. **Targeting**: You can pass `series='column_name'` to calculate the statistic for just one column in a DataFrame.
 
 ---
+## Manipulators
+
+- `.filter_types()` allows one to filter numeric and non-numeric data
+or show them both.
+  - The parameter `keep: str` allows 3 inputs:
+    1. **'n'** -> only numeric
+    2. **'nn'** -> only non-numeric
+    3. **'all'** -> both
+
+---
 
 ## Visual Representation
 
@@ -50,7 +60,6 @@ The `Stat` object supports enhanced terminal display using the `rich` library. T
 Displays the data as a formatted table in the terminal.
 
 - **`theme` (str, optional)**: Specify a color palette.
-- **`non_numeric` (bool)**: If `True`, includes non-numeric columns in the display. Defaults to `False`.
 - **`max_rows` (int|str)**: Maximum number of rows to display. Use `'all'` or `'*'` to show everything. Defaults to `20`.
 - **`max_columns` (int|str)**: Maximum number of columns to display. Use `'all'` or `'*'` to show everything. Defaults to all available columns.
 
