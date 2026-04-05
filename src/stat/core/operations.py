@@ -306,12 +306,14 @@ class DescriptiveMixin:
     def range(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         return self.max(series=series, skipna=skipna) - self.min(series=series, skipna=skipna)
 
+
+
     def summary(self, series: str = None, skipna: bool = True) -> Union['Stat', dict]:
         from .represent import represent
         stats = {
             "mean": self.mean(series=series, skipna=skipna),
-            "median": self.median(series=series, skipna=skipna),
-            "variance": self.variance(series=series, skipna=skipna),
+            "med": self.median(series=series, skipna=skipna),
+            "var": self.variance(series=series, skipna=skipna),
             "std": self.std(series=series, skipna=skipna),
             "sem": self.sem(series=series, skipna=skipna),
             "mad": self.mad(series=series, skipna=skipna),
