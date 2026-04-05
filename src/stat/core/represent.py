@@ -57,14 +57,13 @@ class Stat(DescriptiveMixin, InferentialMixin):
         return f"Stat(tag='{self.tag}', data=\n{self.data})"
 
     def show(self, title: str = f'Stat Object', theme: Optional[str] = None,
-             non_numeric: bool = False, max_rows: Union[int, str, None] = None, 
-             max_columns: Union[int, str, None] = None):
+             max_rows: Union[int, str, None] = None, max_columns: Union[int, str, None] = None):
         """Displays the data using Rich tables if available, otherwise falls back to pandas."""
         current_theme_name = theme or self.theme
-        
+
         # Prepare the DataFrame to show
         if self.is_df:
-            df = self.data if non_numeric else self.data.select_dtypes(include=[np.number])
+            df = self.data
         else:
             df = pd.DataFrame(self.data, columns=["Value"])
 
@@ -131,6 +130,30 @@ class Stat(DescriptiveMixin, InferentialMixin):
             columns=columns,
             **kwargs
         )
+
+    def filter_types(self, keep: str = 'numeric'):
+        """
+        Filters a DataFrame to keep only numeric or non-numeric columns.
+        Returns a new Stat object so operations can be chained.
+        """
+        if not self.is_df:
+            # 1D arrays are already guaranteed to be numeric by your engine
+            return self
+
+        keep = keep.lower()
+
+        if keep in ['numeric', 'num', 'n']:
+            filtered_df = self.data.select_dtypes(include=[np.number])
+        elif keep in ['categorical', 'cat', 'c', 'other', 'non_numeric', 'nn']:
+            filtered_df = self.data.select_dtypes(exclude=[np.number])
+        elif keep == 'all':
+            filtered_df = self.data
+        else:
+            raise ValueError("keep parameter must be 'numeric', 'categorical', or 'all'")
+
+        # Return a brand new Stat object using your factory!
+        # (Assuming 'represent' is imported or available in this file)
+        return represent(filtered_df)
 
     @property
     def shape(self):
@@ -223,3 +246,4 @@ def from_grouped(frequency_dict: dict):
 
     # Return it through your existing factory function!
     return represent(unpacked_data)
+
