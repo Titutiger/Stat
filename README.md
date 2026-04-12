@@ -66,18 +66,44 @@ print(data.mean())
 >>> 5.6667
 ```
 
-### 🎨 Rich Representation
+### 🎨 Data Visualization
 
-`Stat` now supports beautiful terminal-based data visualization using the `rich` library. You can display your data objects with various themes.
+`Stat` supports beautiful terminal-based data tables via `rich` and high-quality plots via `seaborn`.
+
+#### Terminal Tables
+```python
+# Display with themes like "ocean", "sunset", "forest", or "cyan"
+data.show(theme="ocean")
+```
+
+#### Statistical Plotting
+The `.plot()` method automatically detects the best visualization based on your data:
 
 ```python
-# Display with the default theme
-data.show()
+# 1D Data -> Automatic Histogram + KDE
+data.plot() 
 
-# Choose from multiple color palettes
-data.show(theme="ocean")  # Blue/Teal
-data.show(theme="sunset") # Magenta/Orange
+# 2D Numeric -> Automatic Scatter Plot
+df.plot(columns=['bmi', 'charges'])
+
+# Categorical vs Numeric -> Automatic Box Plot
+df.plot(columns=['smoker', 'charges'])
+
+# Categorical -> Automatic Count Plot
+df.plot(columns=['region'])
+
+# Correlation Heatmap
+df.plot(kind='heatmap')
 ```
+
+**Supported Plot Types (`kind`):**
+- `scatter`: Relationship between two variables.
+- `hist` / `kde`: Distribution analysis.
+- `box` / `violin`: Statistical spread (great for comparing categories).
+- `count`: Frequency of categorical values.
+- `heatmap`: Correlation matrices.
+
+You can further customize plots using `figsize`, `title`, `palette`, and `hue`.
 
 ---
 
@@ -216,12 +242,12 @@ pytest -v
 
 ## Asset Files:
 
-`src/stat/nb` is used as a playing ground for testing features. In the `/assets`
-folder, .csv files are present for testing. 
+ 
+`insurance.csv` is downloaded from [kaggle](https://www.kaggle.com/datasets/mirichoi0218/insurance?resource=download)
 
-`people-100.csv` is downloaded from [sample-csv-files](https://github.com/datablist/sample-csv-files?tab=readme-ov-file).
+`Multi_Cuisine_Recipe_Dataset.csv` is downloaded from [kaggle](https://www.kaggle.com/datasets/sonalshinde123/multi-cuisine-recipe-dataset)
 
-> **All of the other .csv files are generate by AI.**
+
 
 ---
 
