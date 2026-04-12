@@ -58,14 +58,34 @@ class Stat(DescriptiveMixin, InferentialMixin):
             return f"Stat(tag='{self.tag}', theme='{self.theme}')"
         return f"Stat(tag='{self.tag}', data=\n{self.data})"
 
+    def select(self, *cols: Union[str, int]):
+        if not self.is_df:
+            return self
+
+        if len(cols) == 1 and isinstance(cols[0], (list, tuple)):
+            cols = cols[0]
+
+        try:
+            if all(isinstance(c, int) for c in cols):
+                subset = self.data.iloc[:, list[cols]]
+            else:
+                subset = self.data[list(cols)]
+
+            return represent(subset)
+
+        except KeyError as e:
+            raise ValueError(f'One or more columns not found: {e}')
+        except IndexError as e:
+            raise ValueError(f'Column index is out of bounds: {e}')
+
     def show(self, title: str = f'Stat Object', theme: Optional[str] = None,
              max_rows: Union[int, str, None] = None, max_columns: Union[int, str, None] = None,
-             width: Union[int, str, None] = None):
+             width: Union[int, str, None] = None, columns: Optional[list[str]] = None):
         """Displays the data using Rich tables if available, otherwise falls back to pandas."""
         current_theme_name = theme or self.theme
 
         if self.is_df:
-            df = self.data
+            df = self.data[columns] if columns else self.data
         else:
             df = pd.DataFrame(self.data, columns=["Value"])
 
@@ -76,7 +96,11 @@ class Stat(DescriptiveMixin, InferentialMixin):
         else:
             actual_max_rows = int(max_rows)
 
-        if max_columns in [None, 'all', '*']:
+
+
+        if max_columns in [None, 'default']:
+            actual_max_columns = 20 # Limit to 20 columns by default for sanity
+        elif max_columns in ['all', '*']:
             actual_max_columns = len(df.columns)
         else:
             actual_max_columns = int(max_columns)
@@ -123,20 +147,20 @@ class Stat(DescriptiveMixin, InferentialMixin):
 
         console.print(table)
 
-    def plot(self, columns: Optional[Union[str, list]] = None, title: Optional[str] = None, theme: Optional[str] = None, **kwargs):
+    def plot(self, columns: Optional[Union[str, list]] = None, kind: Optional[str] = None, title: Optional[str] = None, theme: Optional[str] = None, **kwargs):
         """Displays graphs using matplotlib and seaborn with theme support."""
         from ..graphs.plotter import plot_stat
         
         current_theme_name = theme or self.theme
-        plot_title = title or f"Stat Plot ({self.tag})"
         
         plot_stat(
             data=self.data,
             is_df=self.is_df,
             is_1d=self.is_1d,
             theme_name=current_theme_name,
-            title=plot_title,
+            title=title,
             columns=columns,
+            kind=kind,
             **kwargs
         )
 
