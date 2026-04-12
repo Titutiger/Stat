@@ -50,7 +50,14 @@ data = [
     {"name": "cdf", "description": "Cumulative Distribution Function (P(X <= x))."},
     {"name": "ppf", "description": "Percent Point Function (Inverse CDF)."},
     {"name": "rvs", "description": "Generates random samples from a distribution."},
-    {"name": "entropy", "description": "Calculates the differential entropy of a distribution."}
+    {"name": "entropy", "description": "Calculates the differential entropy of a distribution."},
+
+    # Manipulators
+    {"name": "transform", "description": "Transforms data into desired values."},
+    {"name": "filter types", "description": "Allows one to filter numeric and non-numeric data or show them both."},
+    {"name": "frequencies", "description": "Allows to see the count of all unique elements in the data."},
+    {"name": "count values", "description": "Count a certain element."},
+
 ]
 
 df_functions = pd.DataFrame(data)
