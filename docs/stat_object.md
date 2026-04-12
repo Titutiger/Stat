@@ -19,9 +19,6 @@ df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
 st_df = stat.represent(df)
 ```
 
-### Niche
-Use `represent` instead of calling `Stat()` directly to benefit from "auto-tagging." This allows workflows like `standard_eda` to automatically know if they are dealing with a 1D array or a structured DataFrame.
-
 ---
 
 ## `Stat` (Class)
@@ -31,120 +28,82 @@ The core engine of the library. It inherits from `DescriptiveMixin`, giving it a
 ### Key Properties
 - `tag`: The origin of the data (e.g., 'numpy', 'dataframe').
 - `is_df`: Boolean, true if the data is a Pandas DataFrame.
-- `data`: The underlying data. For DataFrames, this preserves all columns (including non-numeric ones).
+- `data`: The underlying data.
 - `dim`: The number of **numeric** columns in the data.
 
 ### Internal Logic: The `_apply` pattern
-The `Stat` object uses an internal `_apply` method. This means every statistical method (like `.mean()`) automatically works on:
+Every statistical method (like `.mean()`) automatically works on:
 1. **1D Data**: Returns a single float.
 2. **DataFrames**: Calculates the statistic for every **numeric** column and returns a Series.
-3. **Targeting**: You can pass `series='column_name'` to calculate the statistic for just one column in a DataFrame.
+3. **Targeting**: Pass `series='column_name'` to calculate the statistic for just one column in a DataFrame.
 
 ---
+
 ## Manipulators
 
-- `.filter_types()` allows one to filter numeric and non-numeric data
-or show them both.
-  - The parameter `keep: str` allows 3 inputs:
-    1. **'n'** -> only numeric
-    2. **'nn'** -> only non-numeric
-    3. **'all'** -> both
+### `.select(*cols)`
+Returns a new `Stat` object with only the specified columns.
+- **`*cols`**: Column names or indices.
+- **Usage**: `data.select('Age', 'Salary')`
 
-- `.transform()` allows one to replace certain colum data with another.
-  - `.transform('column', [np.nan, 0])`
-  replaces np.nan with 0, this can be changed to whatever one needs.
+### `.filter_types(keep='numeric')`
+Filters the DataFrame to keep only specific types of columns.
+- **`keep`**:
+    - `'numeric'`, `'num'`, `'n'`: Keep only numeric columns.
+    - `'categorical'`, `'cat'`, `'c'`, `'non_numeric'`, `'nn'`: Keep only non-numeric columns.
+    - `'all'`: Keep everything.
+- **Usage**: `data.filter_types(keep='nn')`
 
-- `.frequencies()` allows to see the count of all unique elements in the data.
-  - `.frequencies('column').show()`
+### `.transform(col, mapping)`
+Replaces specific values in a DataFrame column.
+- **`col`**: The column name to transform.
+- **`mapping`**: A list of pairs `['OldValue', 'NewValue', ...]`.
+- **Usage**: `data.transform('Gender', ['M', 1, 'F', 0])`
 
-But if one only wants the count of a certain element, one can do:
-`.count_values('column', 'element')`
+### `.frequencies(series)`
+Returns the counts of all unique elements in a categorical column.
+- **Usage**: `data.frequencies('Country')`
+
+### `.count_value(col, target)`
+Returns the count of a specific value in a column.
+- **Usage**: `data.count_value('Status', 'Success')`
+
+### `.crosstab(index, columns, margins=False)`
+Computes a frequency matrix of two categorical columns.
+- **`index`**: Column for rows.
+- **`columns`**: Column for columns.
+- **`margins`**: Add row/column subtotals.
+- **Usage**: `data.crosstab('Region', 'ProductType', margins=True)`
 
 ---
 
 ## Data Visualization & Plotting
 
-The `Stat` object provides high-level plotting capabilities powered by `seaborn` and `matplotlib`. The `.plot()` method is designed to be "smart"—it automatically chooses a plot type based on the data provided.
+The `Stat` object provides high-level plotting capabilities powered by `seaborn` and `matplotlib`.
 
-### `plot(columns=None, kind=None, theme=None, title=None, **kwargs)`
-
+### `.plot(columns=None, kind=None, theme=None, title=None, **kwargs)`
 - **`columns` (str | list, optional)**: Specify which columns to plot.
-- **`kind` (str, optional)**: Force a specific plot type (e.g., `'scatter'`, `'hist'`, `'box'`, `'violin'`, `'count'`, `'heatmap'`).
-- **`theme` (str, optional)**: Use a specific theme for colors and styling (e.g., `'ocean'`, `'sunset'`).
+- **`kind` (str, optional)**: Force a specific plot type:
+    - `'scatter'`, `'hist'`, `'kde'`, `'box'`, `'violin'`, `'count'`, `'heatmap'`.
+- **`theme` (str, optional)**: Set the color theme (e.g., `'ocean'`, `'sunset'`, `'forest'`).
 - **`title` (str, optional)**: Custom title for the plot.
-- **`**kwargs`**: Passed directly to the underlying Seaborn plotting function (e.g., `hue`, `palette`, `figsize`, `bins`).
-
-### Automatic Detection Logic
-If `kind` is not specified, `Stat` uses the following rules:
-1. **1 Variable (Numeric)**: Histogram with KDE (`kind='hist'`).
-2. **1 Variable (Categorical)**: Count Plot (`kind='count'`).
-3. **2 Variables (Numeric vs Numeric)**: Scatter Plot (`kind='scatter'`).
-4. **2 Variables (Categorical vs Numeric)**: Box Plot (`kind='box'`).
-5. **Multiple Variables**: Overlaid Histograms.
-
-### Supported Plot Types
-
-| Kind | Description | Use Case |
-| :--- | :--- | :--- |
-| `scatter` | Relationship between two numeric variables | Correlation, trends |
-| `hist` | Frequency distribution + KDE curve | Spread, skewness |
-| `kde` | Kernel Density Estimate (smooth curve) | Probability density |
-| `box` | Five-number summary (min, Q1, med, Q3, max) | Outliers, comparisons |
-| `violin` | Box plot + density curve | Detailed distribution shape |
-| `count` | Frequency of categorical levels | Bar charts for categories |
-| `heatmap` | Correlation matrix of numeric columns | Finding relationships |
-
-### Examples
-```python
-# Automatic scatter plot for numeric columns
-df.plot(columns=['bmi', 'charges'])
-
-# Categorical comparison with custom theme and hue
-df.plot(columns=['region', 'charges'], kind='violin', hue='smoker', theme='ocean')
-
-# Quick correlation check
-df.plot(kind='heatmap')
-
-# 1D data distribution
-data.plot(kind='kde', color='red')
-```
+- **`**kwargs`**: Passed directly to Seaborn (e.g., `hue`, `bins`).
 
 ---
 
 ## Visual Representation (Terminal)
 
-The `Stat` object supports enhanced terminal display using the `rich` library. This is purely for visualization; the underlying data remains a Pandas DataFrame or NumPy array.
+### `.show(title='Stat Object', theme=None, max_rows=20, max_columns=None, width=None, columns=None)`
+Displays the data as a formatted table in the terminal using `rich`.
 
-#### `show(title='Stat Object', theme=None, max_rows=20, max_columns=None)`
-Displays the data as a formatted table in the terminal.
+- **`title`**: Table title.
+- **`theme`**: Color palette (`'cyan'`, `'ocean'`, `'forest'`, `'sunset'`, `'default'`).
+- **`max_rows`**: Maximum rows to display. Use `'all'` or `'*'` for everything.
+- **`max_columns`**: Maximum columns to display.
+- **`width`**: Table width (integer or `'*'`).
+- **`columns`**: List of specific columns to show.
 
-- **`theme` (str, optional)**: Specify a color palette.
-- **`max_rows` (int|str)**: Maximum number of rows to display. Use `'all'` or `'*'` to show everything. Defaults to `20`.
-- **`max_columns` (int|str)**: Maximum number of columns to display. Use `'all'` or `'*'` to show everything. Defaults to all available columns.
-
-### Available Themes
-| Theme     | Description | Colors |
-|:----------| :--- | :--- |
-| `cyan`    | Standard clean look | Cyan / White |
-| `ocean`   | Marine aesthetic | Blue / Teal |
-| `forest`  | Nature-inspired | Green / Yellow |
-| `sunset`  | High contrast | Magenta / Orange |
-| `default` | Grayscale / ASCII | White / Grey |
-
-### Example
+**Example:**
 ```python
-s = stat.represent(my_dataframe)
-
-# Default view
-s.show()
-
-# Change the default theme for this object
-s.theme = "forest"
-s.show()
-
-# Override for a single call
-s.show(theme="sunset")
-
+s.show(theme="sunset", max_rows=10)
 ```
-
-
