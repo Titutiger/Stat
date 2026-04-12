@@ -308,6 +308,18 @@ class DescriptiveMixin:
 
 
 
+
+
+    def intersect(self, eq1: str, eq2: str):
+        ...
+
+
+
+
+
+
+
+
     def summary(self, series: str = None, skipna: bool = True) -> Union['Stat', dict]:
         from .represent import represent
         stats = {
