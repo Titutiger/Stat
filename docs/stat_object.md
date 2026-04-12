@@ -62,11 +62,60 @@ But if one only wants the count of a certain element, one can do:
 
 ---
 
-## Visual Representation
+## Data Visualization & Plotting
+
+The `Stat` object provides high-level plotting capabilities powered by `seaborn` and `matplotlib`. The `.plot()` method is designed to be "smart"—it automatically chooses a plot type based on the data provided.
+
+### `plot(columns=None, kind=None, theme=None, title=None, **kwargs)`
+
+- **`columns` (str | list, optional)**: Specify which columns to plot.
+- **`kind` (str, optional)**: Force a specific plot type (e.g., `'scatter'`, `'hist'`, `'box'`, `'violin'`, `'count'`, `'heatmap'`).
+- **`theme` (str, optional)**: Use a specific theme for colors and styling (e.g., `'ocean'`, `'sunset'`).
+- **`title` (str, optional)**: Custom title for the plot.
+- **`**kwargs`**: Passed directly to the underlying Seaborn plotting function (e.g., `hue`, `palette`, `figsize`, `bins`).
+
+### Automatic Detection Logic
+If `kind` is not specified, `Stat` uses the following rules:
+1. **1 Variable (Numeric)**: Histogram with KDE (`kind='hist'`).
+2. **1 Variable (Categorical)**: Count Plot (`kind='count'`).
+3. **2 Variables (Numeric vs Numeric)**: Scatter Plot (`kind='scatter'`).
+4. **2 Variables (Categorical vs Numeric)**: Box Plot (`kind='box'`).
+5. **Multiple Variables**: Overlaid Histograms.
+
+### Supported Plot Types
+
+| Kind | Description | Use Case |
+| :--- | :--- | :--- |
+| `scatter` | Relationship between two numeric variables | Correlation, trends |
+| `hist` | Frequency distribution + KDE curve | Spread, skewness |
+| `kde` | Kernel Density Estimate (smooth curve) | Probability density |
+| `box` | Five-number summary (min, Q1, med, Q3, max) | Outliers, comparisons |
+| `violin` | Box plot + density curve | Detailed distribution shape |
+| `count` | Frequency of categorical levels | Bar charts for categories |
+| `heatmap` | Correlation matrix of numeric columns | Finding relationships |
+
+### Examples
+```python
+# Automatic scatter plot for numeric columns
+df.plot(columns=['bmi', 'charges'])
+
+# Categorical comparison with custom theme and hue
+df.plot(columns=['region', 'charges'], kind='violin', hue='smoker', theme='ocean')
+
+# Quick correlation check
+df.plot(kind='heatmap')
+
+# 1D data distribution
+data.plot(kind='kde', color='red')
+```
+
+---
+
+## Visual Representation (Terminal)
 
 The `Stat` object supports enhanced terminal display using the `rich` library. This is purely for visualization; the underlying data remains a Pandas DataFrame or NumPy array.
 
-#### `show(title='Stat Object', theme=None, non_numeric=False, max_rows=20, max_columns=None)`
+#### `show(title='Stat Object', theme=None, max_rows=20, max_columns=None)`
 Displays the data as a formatted table in the terminal.
 
 - **`theme` (str, optional)**: Specify a color palette.
