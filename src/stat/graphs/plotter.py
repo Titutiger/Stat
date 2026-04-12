@@ -6,31 +6,33 @@ import pandas as pd
 import numpy as np
 from ..themes import THEMES
 
-def plot_stat(data, is_df, is_1d, theme_name="default", title="Stat Plot", **kwargs):
-    """Displays graphs using matplotlib and seaborn with theme support."""
+def plot_stat(data, is_df, is_1d, theme_name="default", title=None, columns=None, kind=None, **kwargs):
+    """Displays graphs using matplotlib and seaborn with enhanced logic and theme support."""
     theme_cfg = THEMES.get(theme_name, THEMES["default"])["plot"]
     
-    # Set style
-    sns.set_style(theme_cfg["sns_style"])
-    plt.rcParams['axes.facecolor'] = theme_cfg["bg"]
-    plt.rcParams['figure.facecolor'] = theme_cfg["bg"]
+    # Set style and context
+    sns.set_theme(style=theme_cfg["sns_style"])
+    plt.rcParams['axes.facecolor'] = theme_cfg.get("bg", "white")
+    plt.rcParams['figure.facecolor'] = theme_cfg.get("bg", "white")
     
-    fig, ax = plt.subplots(figsize=kwargs.get("figsize", (10, 6)))
+    # Extract common kwargs
+    figsize = kwargs.get("figsize", (10, 6))
+    color = kwargs.get("color", theme_cfg["primary"])
+    palette = kwargs.get("palette", "viridis")
+    hue = kwargs.get("hue")
     
-    color = theme_cfg["primary"]
-    accent = theme_cfg["accent"]
+    fig, ax = plt.subplots(figsize=figsize)
     
     if is_df:
-        # Allow selecting specific columns
-        target_columns = kwargs.get("columns")
-        if target_columns:
-            if isinstance(target_columns, str):
-                target_columns = [target_columns]
+        # 1. Handle Column Selection
+        if columns:
+            if isinstance(columns, str):
+                columns = [columns]
             
-            # Case-insensitive column matching
+            # Case-insensitive mapping
             col_map = {str(c).lower(): c for c in data.columns}
             matched_cols = []
-            for tc in target_columns:
+            for tc in columns:
                 if str(tc).lower() in col_map:
                     matched_cols.append(col_map[str(tc).lower()])
                 else:
@@ -39,46 +41,99 @@ def plot_stat(data, is_df, is_1d, theme_name="default", title="Stat Plot", **kwa
             if not matched_cols:
                 print("No valid columns selected to plot.")
                 return
-            
-            numeric_df = data[matched_cols].select_dtypes(include=[np.number])
+            plot_df = data[matched_cols]
         else:
-            numeric_df = data.select_dtypes(include=[np.number])
+            plot_df = data
 
-        if numeric_df.empty:
-            print("No numeric data to plot.")
-            return
+        # 2. Determine Plot Kind if not specified
+        if kind is None:
+            numeric_cols = plot_df.select_dtypes(include=[np.number]).columns
+            cat_cols = plot_df.select_dtypes(exclude=[np.number]).columns
             
-        if len(numeric_df.columns) == 2 and kwargs.get("kind") != "hist":
-            sns.scatterplot(data=numeric_df, x=numeric_df.columns[0], y=numeric_df.columns[1], color=color, ax=ax)
-            ax.set_title(f"{numeric_df.columns[0]} vs {numeric_df.columns[1]}")
-        elif len(numeric_df.columns) == 1:
-            kind = kwargs.get("kind", "hist")
-            col_name = numeric_df.columns[0]
-            if kind == "hist":
-                sns.histplot(numeric_df[col_name], kde=True, color=color, ax=ax)
+            if len(plot_df.columns) == 1:
+                kind = "hist" if plot_df.columns[0] in numeric_cols else "count"
+            elif len(plot_df.columns) == 2:
+                if len(numeric_cols) == 2:
+                    kind = "scatter"
+                elif len(numeric_cols) == 1 and len(cat_cols) == 1:
+                    kind = "box"
+                else:
+                    kind = "count" # Fallback for two categoricals
+            else:
+                kind = "hist" # Fallback for many columns
+
+        # 3. Execute Plotting Logic
+        try:
+            if kind == "scatter":
+                x, y = plot_df.columns[:2]
+                sns.scatterplot(data=data, x=x, y=y, hue=hue, palette=palette, ax=ax, **kwargs)
+                if not title: title = f"{x} vs {y}"
+                
+            elif kind == "hist":
+                sns.histplot(data=plot_df, kde=True, palette=palette, ax=ax, **kwargs)
+                if not title: title = "Distribution Plot"
+                
+            elif kind == "kde":
+                sns.kdeplot(data=plot_df, palette=palette, ax=ax, **kwargs)
+                if not title: title = "Density Plot"
+                
             elif kind == "box":
-                sns.boxplot(x=numeric_df[col_name], color=color, ax=ax)
+                if len(plot_df.columns) >= 2:
+                    # Prefer Categorical on X, Numeric on Y
+                    cats = plot_df.select_dtypes(exclude=[np.number]).columns
+                    nums = plot_df.select_dtypes(include=[np.number]).columns
+                    x = cats[0] if len(cats) > 0 else plot_df.columns[0]
+                    y = nums[0] if len(nums) > 0 else plot_df.columns[1]
+                    sns.boxplot(data=data, x=x, y=y, hue=hue, palette=palette, ax=ax, **kwargs)
+                else:
+                    sns.boxplot(data=plot_df, palette=palette, ax=ax, **kwargs)
+                if not title: title = "Box Plot"
+                
             elif kind == "violin":
-                sns.violinplot(x=numeric_df[col_name], color=color, ax=ax)
-            ax.set_xlabel(col_name)
-        else:
-            # Default to histogram/kde for multiple columns
-            for i, col in enumerate(numeric_df.columns):
-                sns.histplot(numeric_df[col], kde=True, label=col, color=sns.color_palette("husl", len(numeric_df.columns))[i], ax=ax, alpha=0.5)
-            ax.legend()
-    else:
-        # 1D data
-        kind = kwargs.get("kind", "hist")
-        if kind == "hist":
-            sns.histplot(data, kde=True, color=color, ax=ax)
-        elif kind == "box":
-            sns.boxplot(x=data, color=color, ax=ax)
-        elif kind == "violin":
-            sns.violinplot(x=data, color=color, ax=ax)
+                if len(plot_df.columns) >= 2:
+                    cats = plot_df.select_dtypes(exclude=[np.number]).columns
+                    nums = plot_df.select_dtypes(include=[np.number]).columns
+                    x = cats[0] if len(cats) > 0 else plot_df.columns[0]
+                    y = nums[0] if len(nums) > 0 else plot_df.columns[1]
+                    sns.violinplot(data=data, x=x, y=y, hue=hue, palette=palette, ax=ax, **kwargs)
+                else:
+                    sns.violinplot(data=plot_df, palette=palette, ax=ax, **kwargs)
+                if not title: title = "Violin Plot"
+
+            elif kind == "count":
+                x = plot_df.columns[0]
+                sns.countplot(data=data, x=x, hue=hue, palette=palette, ax=ax, **kwargs)
+                if not title: title = f"Count of {x}"
+                
+            elif kind == "heatmap":
+                corr = plot_df.select_dtypes(include=[np.number]).corr()
+                sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax, **kwargs)
+                if not title: title = "Correlation Heatmap"
             
-    ax.set_title(title)
-    if theme_cfg["grid"]:
-        ax.grid(True, linestyle='--', alpha=0.7)
+            else:
+                print(f"Unknown plot kind: {kind}")
+                return
+
+        except Exception as e:
+            print(f"Error generating plot: {e}")
+            return
+
+    else:
+        # 1D Data (Numpy or List)
+        kind = kind or "hist"
+        if kind == "hist":
+            sns.histplot(data, kde=True, color=color, ax=ax, **kwargs)
+        elif kind == "box":
+            sns.boxplot(x=data, color=color, ax=ax, **kwargs)
+        elif kind == "violin":
+            sns.violinplot(x=data, color=color, ax=ax, **kwargs)
+        elif kind == "kde":
+            sns.kdeplot(data, color=color, ax=ax, **kwargs)
+        if not title: title = "1D Data Plot"
+
+    ax.set_title(title or "Stat Plot")
+    if theme_cfg.get("grid", True):
+        ax.grid(True, linestyle='--', alpha=0.6)
         
     plt.tight_layout()
     plt.show()
