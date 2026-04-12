@@ -15,11 +15,11 @@ def plot_stat(data, is_df, is_1d, theme_name="default", title=None, columns=None
     plt.rcParams['axes.facecolor'] = theme_cfg.get("bg", "white")
     plt.rcParams['figure.facecolor'] = theme_cfg.get("bg", "white")
     
-    # Extract common kwargs
-    figsize = kwargs.get("figsize", (10, 6))
-    color = kwargs.get("color", theme_cfg["primary"])
-    palette = kwargs.get("palette", "viridis")
-    hue = kwargs.get("hue")
+    # Extract common kwargs (popping them so they don't cause 'multiple values' errors in seaborn)
+    figsize = kwargs.pop("figsize", (10, 6))
+    color = kwargs.pop("color", theme_cfg["primary"])
+    palette = kwargs.pop("palette", "viridis")
+    hue = kwargs.pop("hue", None)
     
     fig, ax = plt.subplots(figsize=figsize)
     
@@ -84,7 +84,15 @@ def plot_stat(data, is_df, is_1d, theme_name="default", title=None, columns=None
                     nums = plot_df.select_dtypes(include=[np.number]).columns
                     x = cats[0] if len(cats) > 0 else plot_df.columns[0]
                     y = nums[0] if len(nums) > 0 else plot_df.columns[1]
-                    sns.boxplot(data=data, x=x, y=y, hue=hue, palette=palette, ax=ax, **kwargs)
+                    
+                    local_hue = hue
+                    local_kwargs = kwargs.copy()
+                    if local_hue is None:
+                        local_hue = x
+                        if 'legend' not in local_kwargs:
+                            local_kwargs['legend'] = False
+                            
+                    sns.boxplot(data=data, x=x, y=y, hue=local_hue, palette=palette, ax=ax, **local_kwargs)
                 else:
                     sns.boxplot(data=plot_df, palette=palette, ax=ax, **kwargs)
                 if not title: title = "Box Plot"
@@ -95,14 +103,28 @@ def plot_stat(data, is_df, is_1d, theme_name="default", title=None, columns=None
                     nums = plot_df.select_dtypes(include=[np.number]).columns
                     x = cats[0] if len(cats) > 0 else plot_df.columns[0]
                     y = nums[0] if len(nums) > 0 else plot_df.columns[1]
-                    sns.violinplot(data=data, x=x, y=y, hue=hue, palette=palette, ax=ax, **kwargs)
+                    
+                    local_hue = hue
+                    local_kwargs = kwargs.copy()
+                    if local_hue is None:
+                        local_hue = x
+                        if 'legend' not in local_kwargs:
+                            local_kwargs['legend'] = False
+                            
+                    sns.violinplot(data=data, x=x, y=y, hue=local_hue, palette=palette, ax=ax, **local_kwargs)
                 else:
                     sns.violinplot(data=plot_df, palette=palette, ax=ax, **kwargs)
                 if not title: title = "Violin Plot"
 
             elif kind == "count":
                 x = plot_df.columns[0]
-                sns.countplot(data=data, x=x, hue=hue, palette=palette, ax=ax, **kwargs)
+                local_hue = hue
+                local_kwargs = kwargs.copy()
+                if local_hue is None:
+                    local_hue = x
+                    if 'legend' not in local_kwargs:
+                        local_kwargs['legend'] = False
+                sns.countplot(data=data, x=x, hue=local_hue, palette=palette, ax=ax, **local_kwargs)
                 if not title: title = f"Count of {x}"
                 
             elif kind == "heatmap":
