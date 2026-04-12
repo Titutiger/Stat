@@ -50,6 +50,16 @@ or show them both.
     2. **'nn'** -> only non-numeric
     3. **'all'** -> both
 
+- `.transform()` allows one to replace certain colum data with another.
+  - `.transform('column', [np.nan, 0])`
+  replaces np.nan with 0, this can be changed to whatever one needs.
+
+- `.frequencies()` allows to see the count of all unique elements in the data.
+  - `.frequencies('column').show()`
+
+But if one only wants the count of a certain element, one can do:
+`.count_values('column', 'element')`
+
 ---
 
 ## Visual Representation
