@@ -22,9 +22,11 @@ class Stat(DescriptiveMixin, InferentialMixin):
         else:
             self.raw_df = None
 
-        self.is_1d = not isinstance(data, pd.Series)
-        self.is_df = isinstance(data, pd.DataFrame)
         self.data = self._transform(data)
+        self.is_df = isinstance(self.data, pd.DataFrame)
+        self.is_series = isinstance(self.data, pd.Series)
+        self.is_1d = self.is_series or (not self.is_df and getattr(self.data, 'ndim', 1) == 1)
+        
         self._validate()
 
         self.tag = tag
@@ -57,17 +59,16 @@ class Stat(DescriptiveMixin, InferentialMixin):
         return f"Stat(tag='{self.tag}', data=\n{self.data})"
 
     def show(self, title: str = f'Stat Object', theme: Optional[str] = None,
-             max_rows: Union[int, str, None] = None, max_columns: Union[int, str, None] = None):
+             max_rows: Union[int, str, None] = None, max_columns: Union[int, str, None] = None,
+             width: Union[int, str, None] = None):
         """Displays the data using Rich tables if available, otherwise falls back to pandas."""
         current_theme_name = theme or self.theme
 
-        # Prepare the DataFrame to show
         if self.is_df:
             df = self.data
         else:
             df = pd.DataFrame(self.data, columns=["Value"])
 
-        # Handle max_rows and max_columns ('all' or '*' means no limit)
         if max_rows in [None, 'default']:
             actual_max_rows = 20
         elif max_rows in ['all', '*']:
@@ -80,9 +81,8 @@ class Stat(DescriptiveMixin, InferentialMixin):
         else:
             actual_max_columns = int(max_columns)
 
-        # Slice the dataframe based on limits
         df_to_show = df.iloc[:actual_max_rows, :actual_max_columns]
-        
+
         if not HAS_RICH:
             print(df_to_show)
             if len(df) > actual_max_rows or len(df.columns) > actual_max_columns:
@@ -91,27 +91,36 @@ class Stat(DescriptiveMixin, InferentialMixin):
 
         console = Console()
         theme_cfg = THEMES.get(current_theme_name, THEMES["default"])["rich"]
-        
+
+        expand_table = False
+        table_width = None
+        if width == '*':
+            expand_table = True
+        elif isinstance(width, int):
+            table_width = width
+
         table = Table(
             title=title,
             box=get_rich_box(theme_cfg["box_style"]),
-            header_style=theme_cfg["header"]
+            header_style=theme_cfg["header"],
+            width=table_width,
+            expand=expand_table
         )
-        
-        table.add_column("Index", justify="right", style=theme_cfg["index"], no_wrap=True)
-            
+
+        table.add_column("Index", justify="right", style=theme_cfg["index"])
+
         for column in df_to_show.columns:
-            table.add_column(str(column), style=theme_cfg["row"])
-            
+            table.add_column(str(column), style=theme_cfg["row"], overflow="fold")
+
         for index, row in df_to_show.iterrows():
             row_values = [str(val) for val in row]
             row_values.insert(0, str(index))
             table.add_row(*row_values)
-            
+
         if len(df) > actual_max_rows or len(df.columns) > actual_max_columns:
             footer_vals = ["..." for _ in df_to_show.columns]
             table.add_row("...", *footer_vals)
-            
+
         console.print(table)
 
     def plot(self, columns: Optional[Union[str, list]] = None, title: Optional[str] = None, theme: Optional[str] = None, **kwargs):
@@ -130,6 +139,24 @@ class Stat(DescriptiveMixin, InferentialMixin):
             columns=columns,
             **kwargs
         )
+
+    def crosstab(self, index: str, columns: str, margins: bool = False):
+        """
+        Computes a cross-tabulation (frequency matrix) of two categorical columns.
+        Returns a new Stat object so it can be chained with .show()
+        """
+        if not self.is_df:
+            raise TypeError("crosstab requires a Pandas DataFrame.")
+
+        if index not in self.data.columns:
+            raise ValueError(f"Index column '{index}' not found.")
+        if columns not in self.data.columns:
+            raise ValueError(f"Columns column '{columns}' not found.")
+
+        # Calculate the matrix using Pandas
+        ct_df = pd.crosstab(self.data[index], self.data[columns], margins=margins)
+
+        return represent(ct_df)
 
     def filter_types(self, keep: str = 'numeric'):
         """
@@ -155,15 +182,45 @@ class Stat(DescriptiveMixin, InferentialMixin):
         # (Assuming 'represent' is imported or available in this file)
         return represent(filtered_df)
 
+    def transform(self, col: str, mapping: list[str]):
+        """
+        Replaces specific values in a DataFrame column.
+        Expects a flat list of pairs: ['Old1', 'New1', 'Old2', 'New2']
+        """
+        if not self.is_df:
+            raise TypeError("transform() can only be used on DataFrames.")
+
+        if not col or col not in self.data.columns:
+            raise ValueError(f"Column '{col}' not found in data.")
+
+        if not mapping:
+            return self  # Nothing to do
+
+        if len(mapping) % 2 != 0:
+            raise ValueError("`mapping` must be a list with an even number of elements. \nEx: ['OldValue', 'NewValue']")
+
+        iterator = iter(mapping)
+        mapping_dict = dict(zip(iterator, iterator))
+        self.data[col] = self.data[col].replace(mapping_dict)
+
+        return self
+
+    def count_value(self, col: str, target: Any) -> int:
+        """Counts how many times a specific value appears in a column."""
+        # Use raw_df to ensure we can search for strings!
+        df_to_search = self.raw_df if self.raw_df is not None else self.data
+
+        if col not in df_to_search.columns:
+            raise ValueError(f"Column '{col}' not found.")
+
+        return int((df_to_search[col] == target).sum())
+
+
+
     @property
     def shape(self):
         return self.data.shape
 
-    @property
-    def T(self):
-        """Returns a transposed version of the Stat object."""
-        # Using represent() factory ensures the new object is properly initialized and tagged
-        return represent(self.data.T)
 
 
     # =========================
@@ -171,8 +228,8 @@ class Stat(DescriptiveMixin, InferentialMixin):
     # =========================
 
     @staticmethod
-    def _transform(obj: Any, to: str = 'np.ndarray') -> np.ndarray | pd.DataFrame:
-        if isinstance(obj, pd.DataFrame):
+    def _transform(obj: Any, to: str = 'np.ndarray') -> np.ndarray | pd.DataFrame | pd.Series:
+        if isinstance(obj, (pd.DataFrame, pd.Series)):
             return obj
         try:
             return np.asarray(obj, dtype=float)
