@@ -15,7 +15,7 @@ class DescriptiveMixin:
     def mean(self, method: str = "arithmetic", series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _mean(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             n = len(arr)
             if n == 0: return float('nan')
 
@@ -38,7 +38,7 @@ class DescriptiveMixin:
     def median(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _median(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             n = len(arr)
             if n == 0: return float('nan')
 
@@ -54,14 +54,14 @@ class DescriptiveMixin:
     def mode(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _mode(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             if len(arr) == 0:
                 return float('nan')
 
             values, counts = np.unique(arr, return_counts=True)
             max_count = np.max(counts)
             modes = values[counts == max_count]
-            return float(modes[0])  # Returns first mode if multimodal
+            return float(modes[0]) if np.issubdtype(arr.dtype, np.number) else modes[0]  # Returns first mode if multimodal
 
         return self._apply(_mode, target_column=series)
 
@@ -73,7 +73,7 @@ class DescriptiveMixin:
     def variance(self, sample: bool = False, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _variance(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             n = len(arr)
             if n == 0 or (sample and n < 2):
                 return float('nan')
@@ -95,7 +95,7 @@ class DescriptiveMixin:
     def mad(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _mad(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             if len(arr) == 0:
                 return float('nan')
             dataset_median = np.median(arr)
@@ -110,7 +110,7 @@ class DescriptiveMixin:
 
         def _percentile(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
 
             if len(arr) == 0:
                 return float('nan')
@@ -141,7 +141,7 @@ class DescriptiveMixin:
 
         def _sem(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             n = len(arr)
             # SEM requires at least 2 data points to calculate sample std deviation
             if n < 2:
@@ -218,7 +218,7 @@ class DescriptiveMixin:
 
         def _skew(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             n = len(arr)
 
             # Sample skewness requires at least 3 data points
@@ -252,7 +252,7 @@ class DescriptiveMixin:
 
         def _kurtosis(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             n = len(arr)
 
             # Sample kurtosis requires at least 4 data points
@@ -286,7 +286,7 @@ class DescriptiveMixin:
     def min(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _min(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             if len(arr) == 0:
                 return float('nan')
             return float(np.min(arr))
@@ -296,7 +296,7 @@ class DescriptiveMixin:
     def max(self, series: str = None, skipna: bool = True) -> Union[float, pd.Series]:
         def _max(arr):
             if skipna:
-                arr = arr[~np.isnan(arr)]
+                arr = arr[~pd.isna(arr)]
             if len(arr) == 0:
                 return float('nan')
             return float(np.max(arr))
