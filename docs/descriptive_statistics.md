@@ -29,6 +29,10 @@ These methods are available on any `Stat` object and are used to summarize and d
 - **Niche**: Standard deviation is the square root of variance, providing spread in the same units as the data.
 - **Usage**: `data.std()`
 
+### `.sem(series=None, skipna=True)`
+- **Niche**: Standard Error of the Mean. Measures how far the sample mean is likely to be from the population mean.
+- **Usage**: `data.sem()`
+
 ### `.mad(series=None, skipna=True)`
 - **Niche**: Mean Absolute Deviation. More robust to outliers than standard deviation.
 - **Usage**: `data.mad()`
@@ -37,15 +41,41 @@ These methods are available on any `Stat` object and are used to summarize and d
 - **Niche**: Interquartile Range ($Q_3 - Q_1$). Ideal for identifying the "middle 50%" and outlier detection.
 - **Usage**: `data.iqr()`
 
+### `.min(series=None, skipna=True)`
+- **Niche**: The smallest value in the dataset.
+- **Usage**: `data.min()`
+
+### `.max(series=None, skipna=True)`
+- **Niche**: The largest value in the dataset.
+- **Usage**: `data.max()`
+
+### `.range(series=None, skipna=True)`
+- **Niche**: The difference between the maximum and minimum values.
+- **Usage**: `data.range()`
+
+---
+
+## Quantiles and Percentiles
+
+### `.percentile(q, series=None, skipna=True)`
+- **`q`**: The percentile rank to find (between 0 and 100).
+- **Usage**: `data.percentile(95)` (95th percentile)
+
+### `.quantile(q, series=None, skipna=True)`
+- **`q`**: The quantile rank to find (between 0.0 and 1.0).
+- **Usage**: `data.quantile(0.75)` (equivalent to the 75th percentile)
+
 ---
 
 ## Shape and Distribution
 
-### `.skewness(sample=True)`
+### `.skewness(series=None, skipna=True, sample=True)`
+- **`sample`**: Set to `True` (default) for sample skewness (Fisher-Pearson coefficient).
 - **Niche**: Measures asymmetry. Positive = right tail, Negative = left tail.
 - **Usage**: `data.skewness()`
 
-### `.kurtosis(sample=True)`
+### `.kurtosis(series=None, skipna=True, sample=True)`
+- **`sample`**: Set to `True` (default) for sample excess kurtosis.
 - **Niche**: Measures "tailedness." High kurtosis means more outliers than a normal distribution.
 - **Usage**: `data.kurtosis()`
 
